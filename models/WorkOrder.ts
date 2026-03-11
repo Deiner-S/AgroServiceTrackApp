@@ -20,7 +20,8 @@ export default class WorkOrder{
     status: { type: "TEXT", notNull: true },
     status_sync: { type: "INTEGER", notNull: true },
     service: { type: "TEXT" },
-    signature: { type: "BLOB" },
+    signature_in: { type: "BLOB" },
+    signature_out: { type: "BLOB" },
     insertDate: { type: "TEXT" }
   };
 
@@ -36,7 +37,8 @@ export default class WorkOrder{
     public status: string,
     public status_sync: number,
     public service?: string,
-    public signature?: Uint8Array | null,
+    public signature_in?: Uint8Array | null,
+    public signature_out?: Uint8Array | null,
     public insertDate?: string,
   ) {}
 }

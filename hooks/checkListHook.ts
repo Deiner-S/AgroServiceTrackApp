@@ -16,18 +16,45 @@ interface ChecklistStateItem {
   photoUri: string | null;
 }
 
+export type ChecklistType = "1" | "2";
+
+export interface ChecklistWorkOrderUpdatePayload {
+  chassi?: string;
+  horimetro?: number;
+  model?: string;
+  date_in?: string;
+  date_out?: string;
+  status?: string;
+  service?: string;
+  signature_in?: string;
+  signature_out?: string;
+}
+
+export interface ChecklistItemPayload {
+  checklist_item_fk: string;
+  status: string | null;
+  photoUri: string | null;
+}
+
+export interface ChecklistSavePayload {
+  type: ChecklistType;
+  workOrder: WorkOrder;
+  workOrderUpdate?: ChecklistWorkOrderUpdatePayload;
+  items: ChecklistItemPayload[];
+}
+
 export default function useCheckListHook(){
+  const route = useRoute();
+  const { workOrder } = route.params as { workOrder: WorkOrder };
+
     const [openSignature, setOpenSignature] = useState(false);
 
     const [signature, setSignature] = useState<string>("")
-    const [dateFilled, setDateFilled] = useState(new Date());
+    const [dateFilled, setDateFilled] = useState(workOrder?.date_in ? new Date(workOrder.date_in) : new Date());
     const [openCalendar, setOpenCalendar] = useState(false);
-    const [chassi, setChassi] = useState("");
-    const [horimetro, setHorimetro] = useState<number>(0);
-    const [modelo, setModelo] = useState("");
-
-    const route = useRoute();
-    const { workOrder } = route.params as { workOrder: WorkOrder };
+    const [chassi, setChassi] = useState(workOrder?.chassi ?? "");
+    const [horimetro, setHorimetro] = useState<number>(Number(workOrder?.horimetro) || 0);
+    const [modelo, setModelo] = useState(workOrder?.model ?? "");
     
     const [checklistItems, setChecklistItems] = useState<CheckListItem[]>([]);
     const [checklistState, setChecklistState] = useState<ChecklistStateItem[]>([]);
@@ -126,39 +153,87 @@ export default function useCheckListHook(){
           });
         }
 
-    const saveData = async () => {
-      console.log("saveData")
-      workOrderRepository?.update({
-          operation_code:workOrder.operation_code,
-          client:workOrder.client,
-          symptoms:workOrder.symptoms,
-          chassi:chassi,
-          horimetro:horimetro,
-          model:modelo,
-          date_in:dateFilled.toISOString(),
-          date_out: undefined,
-          status:"2",
-          status_sync: 0,
-          service: undefined,
-          signature: await base64ToUint8Array(signature)
+    const saveWorkOrderData = async (checklist: ChecklistSavePayload) => {
+      if (!workOrderRepository) {
+        throw new Error("WorkOrderRepository not initialized");
+      }
 
-      })
-      for (const checkList of checklistState){
-        if(checkList.selected && checkList.photoUri){
-          const novo_checklist: CheckList = {            
-            id:uuidv4(),
-            checklist_item_fk:checkList.id,
-            work_order_fk: workOrder.operation_code,
+      if (!checklist.workOrderUpdate) {
+        return;
+      }
+
+      const {
+        signature_in,
+        signature_out,
+        ...workOrderUpdate
+      } = checklist.workOrderUpdate;
+
+      await workOrderRepository.update({
+        ...checklist.workOrder,
+        ...workOrderUpdate,
+        status_sync: 0,
+        signature_in: signature_in
+          ? await base64ToUint8Array(signature_in)
+          : checklist.workOrder.signature_in,
+        signature_out: signature_out
+          ? await base64ToUint8Array(signature_out)
+          : checklist.workOrder.signature_out,
+      });
+    };
+
+    const saveChecklistItems = async (checklist: ChecklistSavePayload) => {
+      if (!checkListRepositor) {
+        throw new Error("CheckListRepository not initialized");
+      }
+
+      for (const item of checklist.items) {
+        if (item.status && item.photoUri) {
+          const novo_checklist: CheckList = {
+            id: uuidv4(),
+            checklist_item_fk: item.checklist_item_fk,
+            work_order_fk: checklist.workOrder.operation_code,
             status_sync: 0,
-            type: "1",
-            status: checkList.selected,
-            img: await readImageAsUint8Array(checkList.photoUri),          
-          }
-          checkListRepositor?.save(novo_checklist)
+            type: checklist.type,
+            status: item.status,
+            img: await readImageAsUint8Array(item.photoUri),
+          };
+
+          await checkListRepositor.save(novo_checklist);
         }
       }
-      console.log("Salvo")
-    }
+    };
+
+    const saveData = async (checklist: ChecklistSavePayload) => {
+      await saveWorkOrderData(checklist);
+      await saveChecklistItems(checklist);
+    };
+
+    const buildChecklistPayload = (
+      type: ChecklistType,
+      currentWorkOrder: WorkOrder = workOrder
+    ): ChecklistSavePayload => ({
+      type,
+      workOrder: currentWorkOrder,
+      workOrderUpdate: type === "1"
+        ? {
+            chassi,
+            horimetro,
+            model: modelo,
+            date_in: dateFilled.toISOString(),
+            status: "2",
+            signature_in: signature,
+          }
+        : {
+            date_out: new Date().toISOString(),
+            status: "4",
+            signature_out: signature,
+          },
+      items: checklistState.map((item) => ({
+        checklist_item_fk: item.id,
+        status: item.selected,
+        photoUri: item.photoUri,
+      })),
+    });
 
 
 
@@ -185,7 +260,8 @@ export default function useCheckListHook(){
     chassi, setChassi,horimetro,setHorimetro,
     modelo, setModelo, checklistState, setChecklistState,
     setItemSelected, setItemPhotoUri, workOrder,
-    saveData,onChange,takePhoto, checklistItems,
+    saveWorkOrderData, saveChecklistItems,
+    saveData,buildChecklistPayload,onChange,takePhoto, checklistItems,
     signature, setSignature,setOpenSignature,openSignature 
   }
 

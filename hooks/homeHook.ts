@@ -18,7 +18,8 @@ export default function useHomeHook() {
   const loadWorkOrders = async () => {
     const workOrderRepository = await WorkOrderRepository.build();
     const data: WorkOrder[] = await workOrderRepository.getAll();
-    setWorkOrders(data);
+    const visibleOrders = data.filter((order) => order.status !== "4");
+    setWorkOrders(visibleOrders);
   };
 
   useEffect(() => {

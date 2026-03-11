@@ -17,7 +17,8 @@ export default function CheckList() {
 
   async function handleSave() {
       try {
-        await checkList.saveData();
+        const checklistPayload = checkList.buildChecklistPayload("1");
+        await checkList.saveData(checklistPayload);
         navigation.navigate(Routes.HOME); 
       } catch (error) {
         console.error("Erro ao salvar formulário", error);

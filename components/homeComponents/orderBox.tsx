@@ -18,7 +18,13 @@ const STATUS_LABEL: Record<string, string> = {
 
 export default function OsCard({ item }: OsCardProps) {
   const navigation = useNavigation<any>();
-  const targetRoute = item.status === "1" ? Routes.CHECKLIST : item.status === "2" ? Routes.MAINTENANCE : Routes.CHECKLIST;
+  const targetRoute = item.status === "1"
+    ? Routes.CHECKLIST
+    : item.status === "2"
+      ? Routes.MAINTENANCE
+      : item.status === "3"
+        ? Routes.DELIVERY_CHECKLIST
+        : Routes.CHECKLIST;
   return (
       <Pressable
         onPress={() => navigation.navigate(targetRoute, { workOrder: item })}

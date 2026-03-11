@@ -39,6 +39,7 @@ export default function StackLayout() {
         }}
       />
       <Stack.Screen name={Routes.CHECKLIST} options={{title:"Check list"}}/>
+      <Stack.Screen name={Routes.DELIVERY_CHECKLIST} options={{ title: "Checklist de entrega" }} />
       <Stack.Screen name={Routes.MAINTENANCE} options={{ title: "Manutenção" }} />
     </Stack>
   )
