@@ -49,7 +49,11 @@ function generateCreateTableSQL(model: any): string {
 export async function initDB(db: any): Promise<void> {
   try {
     await db.execAsync("BEGIN TRANSACTION")
-
+    await db.execAsync(`
+        DROP TABLE IF EXISTS check_list_item;
+        DROP TABLE IF EXISTS work_order;
+        DROP TABLE IF EXISTS check_list;`
+    )
     for (const model of models) {
       const sql = generateCreateTableSQL(model)
       await db.execAsync(sql)
