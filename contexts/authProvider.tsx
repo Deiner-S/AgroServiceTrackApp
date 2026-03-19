@@ -3,11 +3,11 @@ import { clearTokenStorange } from '@/storange/authStorange'
 import { useEffect, useState } from 'react'
 import { AuthContext } from './authContext'
 
-type props={
+type props = {
   children: React.ReactNode
 }
 
-export function AuthProvider({children} : props) {
+export function AuthProvider({ children }: props) {
   const [loged, setloged] = useState(false)
   const [loading, setLoading] = useState(true)
 
@@ -21,14 +21,9 @@ export function AuthProvider({children} : props) {
     bootstrap()
   }, [])
 
-  async function login(username: string, password: string){
-    try{
-      await requestToken({username,password})
-      setloged(true)
-    }catch(err){
-      console.log(`LOG ERROR ${err}`)
-    }
-
+  async function login(username: string, password: string) {
+    await requestToken({ username, password })
+    setloged(true)
   }
 
   function logout() {

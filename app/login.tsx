@@ -3,6 +3,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import { useState } from 'react'
 import {
+  Alert,
   Pressable,
   StyleSheet,
   Text,
@@ -17,27 +18,36 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
-  const { login,loged } = useAuth()
+  const { login } = useAuth()
 
   async function handleLogin() {
     if (!user || !password) {
-      console.log('campos invalidos')
+      Alert.alert('Login', 'Preencha usuario e senha.')
       return
     }
 
-    await login(user, password)
+    try {
+      await login(user, password)
+      router.replace('/(stack)/homeScreen')
+    } catch (err) {
+      const code = String(err)
 
-    if (loged) {
-        router.replace('/(stack)/homeScreen')
-    } else {
-        console.log('login inválido')
+      if (code.includes('INACTIVE_USER')) {
+        Alert.alert('Acesso negado', 'Funcionario inativo. Procure um administrador.')
+        return
       }
-  }
 
+      if (code.includes('INVALID_CREDENTIALS')) {
+        Alert.alert('Login', 'Usuario ou senha invalidos.')
+        return
+      }
+
+      Alert.alert('Login', 'Nao foi possivel realizar o login.')
+    }
+  }
 
   return (
     <View style={styles.container}>
-      {/* USER */}
       <TextInput
         style={styles.input}
         placeholder="User"
@@ -47,7 +57,6 @@ export default function Login() {
         autoCapitalize="none"
       />
 
-      {/* PASSWORD */}
       <View style={styles.passwordContainer}>
         <TextInput
           style={styles.passwordInput}
@@ -59,16 +68,15 @@ export default function Login() {
           autoCapitalize="none"
         />
 
-        <Pressable onPress={() => setShowPassword(p => !p)}>
-           <MaterialIcons
-              name={showPassword ? 'visibility-off' : 'visibility'}
-              size={22}
-              color="#6b7280"
-            />
+        <Pressable onPress={() => setShowPassword((p) => !p)}>
+          <MaterialIcons
+            name={showPassword ? 'visibility-off' : 'visibility'}
+            size={22}
+            color="#6b7280"
+          />
         </Pressable>
       </View>
 
-      {/* BUTTON */}
       <Pressable
         onPress={handleLogin}
         style={({ pressed }) => [

@@ -2,34 +2,45 @@ import { AuthTokens, getTokenStorange, saveTokenStorange } from "@/storange/auth
 import { httpRequest } from "./networkService"
 
 type login = {
-    username: string,
-    password: string
+  username: string,
+  password: string
 }
 
-export async function haveToken(): Promise<boolean>{
+export async function haveToken(): Promise<boolean> {
   const token = await getTokenStorange()
   return token?.access != null
 }
 
-
-export async function requestToken({username,password}:login){
+export async function requestToken({ username, password }: login) {
+  try {
     const response = await httpRequest<AuthTokens>({
-            method: 'POST',
-            endpoint: '/api/token/',
-            BASE_URL: "https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador",
-            body: {username,password}
+      method: 'POST',
+      endpoint: '/api/token/',
+      BASE_URL: "https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador",
+      body: { username, password }
     })
-    
-    
-    if (!response.access && !response.refresh) throw Error("REQUEST_FAILURE")
-      console.log('REQUEST TOKEN:', response.access)
-      await saveTokenStorange({
-        access: response.access,
-        refresh: response.refresh
-      })     
-    
-}
 
+    if (!response.access && !response.refresh) throw Error("REQUEST_FAILURE")
+
+    console.log('REQUEST TOKEN:', response.access)
+    await saveTokenStorange({
+      access: response.access,
+      refresh: response.refresh
+    })
+  } catch (err) {
+    const message = String(err)
+
+    if (message.includes('no_active_account') || message.toLowerCase().includes('inativo')) {
+      throw new Error('INACTIVE_USER')
+    }
+
+    if (message.includes('401')) {
+      throw new Error('INVALID_CREDENTIALS')
+    }
+
+    throw err
+  }
+}
 
 export async function refreshToken(): Promise<void> {
   const tokens = await getTokenStorange()
@@ -46,6 +57,6 @@ export async function refreshToken(): Promise<void> {
 
   await saveTokenStorange({
     access: response.access,
-    refresh: tokens.refresh, 
+    refresh: tokens.refresh,
   })
 }
