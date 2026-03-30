@@ -51,7 +51,7 @@ export default function Login() {
       <TextInput
         style={styles.input}
         placeholder="User"
-        placeholderTextColor="#8e8e93"
+        placeholderTextColor="#d1d5db"
         value={user}
         onChangeText={setUser}
         autoCapitalize="none"
@@ -61,7 +61,7 @@ export default function Login() {
         <TextInput
           style={styles.passwordInput}
           placeholder="Password"
-          placeholderTextColor="#8e8e93"
+          placeholderTextColor="#d1d5db"
           value={password}
           onChangeText={setPassword}
           secureTextEntry={!showPassword}
@@ -101,15 +101,15 @@ const styles = StyleSheet.create({
 
   input: {
     borderWidth: 1,
-    borderColor: '#3a3f45',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     width: '100%',
     maxWidth: 320,
     height: 52,
     marginBottom: 10,
     paddingHorizontal: 12,
     borderRadius: 10,
-    backgroundColor: '#fff',
-    color: '#000',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    color: '#fff',
     fontSize: 16,
 
     shadowColor: '#000',
@@ -128,9 +128,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
 
     borderWidth: 1,
-    borderColor: '#3a3f45',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 10,
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
 
     paddingHorizontal: 12,
 
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
 
   passwordInput: {
     flex: 1,
-    color: '#000',
+    color: '#fff',
     fontSize: 16,
   },
 

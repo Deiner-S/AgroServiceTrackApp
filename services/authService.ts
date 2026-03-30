@@ -7,8 +7,12 @@ type login = {
 }
 
 export async function haveToken(): Promise<boolean> {
-  const token = await getTokenStorange()
-  return token?.access != null
+  try {
+    const token = await getTokenStorange()
+    return token?.access != null
+  } catch (err) {
+    throw err
+  }
 }
 
 export async function requestToken({ username, password }: login) {
@@ -43,20 +47,24 @@ export async function requestToken({ username, password }: login) {
 }
 
 export async function refreshToken(): Promise<void> {
-  const tokens = await getTokenStorange()
-  if (!tokens?.refresh) throw new Error('NO_REFRESH_TOKEN')
+  try {
+    const tokens = await getTokenStorange()
+    if (!tokens?.refresh) throw new Error('NO_REFRESH_TOKEN')
 
-  const response = await httpRequest<{ access: string }>({
-    method: 'POST',
-    endpoint: '/api/token/refresh/',
-    BASE_URL: 'https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador',
-    body: { refresh: tokens.refresh },
-  })
+    const response = await httpRequest<{ access: string }>({
+      method: 'POST',
+      endpoint: '/api/token/refresh/',
+      BASE_URL: 'https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador',
+      body: { refresh: tokens.refresh },
+    })
 
-  if (!response.access) throw new Error('REFRESH_FAILED')
+    if (!response.access) throw new Error('REFRESH_FAILED')
 
-  await saveTokenStorange({
-    access: response.access,
-    refresh: tokens.refresh,
-  })
+    await saveTokenStorange({
+      access: response.access,
+      refresh: tokens.refresh,
+    })
+  } catch (err) {
+    throw err
+  }
 }

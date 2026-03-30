@@ -22,15 +22,15 @@ export async function httpRequest<T>(
   retried = false,
   controlLoading = true
 ): Promise<T> {
-    if (controlLoading) {
-      beginRequestLoading();
-    }
-
     try {
+      if (controlLoading) {
+        beginRequestLoading();
+      }
+
       const response = await fetch(`${options.BASE_URL}${options.endpoint}`, {
-          method: options.method,
-          headers: {'Content-Type': 'application/json',...options.headers},
-          body: options.body ? JSON.stringify(options.body) : undefined,
+        method: options.method,
+        headers: {'Content-Type': 'application/json',...options.headers},
+        body: options.body ? JSON.stringify(options.body) : undefined,
       });
 
       if (response.status === 401 && !retried) {
@@ -49,6 +49,8 @@ export async function httpRequest<T>(
       }
 
       return response.json() as Promise<T>;
+    } catch (err) {
+      throw err
     } finally {
       if (controlLoading) {
         endRequestLoading();
@@ -59,9 +61,13 @@ export async function httpRequest<T>(
 
 
 export async function hasWebAccess(): Promise<boolean> {
+    try {
       const state = await NetInfo.fetch();
     
       return Boolean(
         state.isConnected && state.isInternetReachable
       );
+    } catch (err) {
+      throw err
     }
+}

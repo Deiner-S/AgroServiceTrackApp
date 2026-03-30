@@ -22,8 +22,12 @@ export default class Synchronizer{
     }
 
     static async build(): Promise<Synchronizer> {
-        const instance = new Synchronizer();
-        return instance;
+        try {
+            const instance = new Synchronizer();
+            return instance;
+        } catch (err) {
+            throw err
+        }
     }
     public async run(): Promise<void>{
         try{        
@@ -46,106 +50,120 @@ export default class Synchronizer{
             
         }catch(err){
             console.log(`log Error: ${err}`)
+            throw err
         }
         
     }
 
-    private async receivePendingOrders(endPoint:string) {        
-        const workOrders = await httpRequest<WorkOrder[]>({
-            method: 'GET',
-            endpoint: endPoint,
-            BASE_URL: this.baseUrl,
-            headers: {Authorization: `Bearer ${this.authToken}`,}
-        })
-        console.log(workOrders)
-        if(!workOrders){
-            console.log(`throw Error: Failed to connect to endpoint:${endPoint}`)
-        }
-        
-        const workOrderRepository = await WorkOrderRepository.build()
-        for(const workOrder of workOrders){            
-            const order_exists = await workOrderRepository.getById(workOrder.operation_code)
-            if(!order_exists){                
-                workOrder.status_sync = 1
-                await workOrderRepository.save(workOrder)                
-            }
-                    
-        }
-        
-    }
-
-    private async receiveCheckListItems(endPoint:string){        
-        const checklistItemList = await httpRequest<CheckListItem[]>({
-            method: 'GET',
-            endpoint: endPoint,
-            BASE_URL: this.baseUrl,
-            headers: {Authorization: `Bearer ${this.authToken}`,}
-        })
-
-        if(!checklistItemList){
-            console.log(`throw Error: Failed to connect to endpoint:${endPoint}`)
-        }
-        
-        const checkListItemRepository = await CheckListItemRepository.build();
-        await checkListItemRepository.deleteAll()
-        for(const item of checklistItemList){
-            await checkListItemRepository.save(item)        
-        }           
-    }
-
-    private async sendWorkOrders(endPoint:string){   
-        const workOrderRepository = await WorkOrderRepository.build()
-        const workOrders = await workOrderRepository.getAll()
-        const workOrdersFiltered = await workOrders.filter(item => item.status_sync !== 1)
-
-        if (workOrdersFiltered.length === 0){
-            console.log(`throw Error: empyt list:${endPoint}`)
-         
-        }else{    
-        
-            const response = await httpRequest<{ ok: boolean }>({
-                method: 'POST',
+    private async receivePendingOrders(endPoint:string) {
+        try {
+            const workOrders = await httpRequest<WorkOrder[]>({
+                method: 'GET',
                 endpoint: endPoint,
                 BASE_URL: this.baseUrl,
-                body: workOrdersFiltered,
                 headers: {Authorization: `Bearer ${this.authToken}`,}
             })
-            
-            if(response.ok){
-                for(const workOrder of workOrdersFiltered){
-                    workOrder.status_sync = 1
-                    await workOrderRepository.update(workOrder)
-                }
-            }else{
+            console.log(workOrders)
+            if(!workOrders){
                 console.log(`throw Error: Failed to connect to endpoint:${endPoint}`)
             }
-        }
 
+            const workOrderRepository = await WorkOrderRepository.build()
+            for(const workOrder of workOrders){
+                const order_exists = await workOrderRepository.getById(workOrder.operation_code)
+                if(!order_exists){
+                    workOrder.status_sync = 1
+                    await workOrderRepository.save(workOrder)
+                }
+            }
+        } catch (err) {
+            throw err
+        }
     }
 
-    private async sendCheckListsFilleds(endPoint:string){
-        const checkListRepository = await CheckListRepository.build()
-        const checkLists = await checkListRepository.getAll()
-        const checkListsFiltered = checkLists.filter(item => item.status_sync !== 1)
-        if (checkListsFiltered.length === 0){
-            console.log(`throw Error: empyt list:${endPoint}`)
-        }else{       
-            const response = await httpRequest<{ ok: boolean }>({
+    private async receiveCheckListItems(endPoint:string){
+        try {
+            const checklistItemList = await httpRequest<CheckListItem[]>({
+                method: 'GET',
+                endpoint: endPoint,
+                BASE_URL: this.baseUrl,
+                headers: {Authorization: `Bearer ${this.authToken}`,}
+            })
+
+            if(!checklistItemList){
+                console.log(`throw Error: Failed to connect to endpoint:${endPoint}`)
+            }
+
+            const checkListItemRepository = await CheckListItemRepository.build();
+            await checkListItemRepository.deleteAll()
+            for(const item of checklistItemList){
+                await checkListItemRepository.save(item)
+            }
+        } catch (err) {
+            throw err
+        }
+    }
+
+    private async sendWorkOrders(endPoint:string){
+        try {
+            const workOrderRepository = await WorkOrderRepository.build()
+            const workOrders = await workOrderRepository.getAll()
+            const workOrdersFiltered = await workOrders.filter(item => item.status_sync !== 1)
+
+            if (workOrdersFiltered.length === 0){
+                console.log(`throw Error: empyt list:${endPoint}`)
+
+            }else{
+
+                const response = await httpRequest<{ ok: boolean }>({
                     method: 'POST',
                     endpoint: endPoint,
                     BASE_URL: this.baseUrl,
-                    body: checkListsFiltered,
+                    body: workOrdersFiltered,
                     headers: {Authorization: `Bearer ${this.authToken}`,}
-            })
+                })
 
-            if(response.ok){
-                for(const checkList of checkListsFiltered){
-                    checkList.status_sync = 1
-                    await checkListRepository.update(checkList)
+                if(response.ok){
+                    for(const workOrder of workOrdersFiltered){
+                        workOrder.status_sync = 1
+                        await workOrderRepository.update(workOrder)
+                    }
+                }else{
+                    console.log(`throw Error: Failed to connect to endpoint:${endPoint}`)
                 }
-            }else{
-                console.log(`throw Error: Failed to connect to endpoint:${endPoint}`)
             }
+        } catch (err) {
+            throw err
+        }
+    }
+
+    private async sendCheckListsFilleds(endPoint:string){
+        try {
+            const checkListRepository = await CheckListRepository.build()
+            const checkLists = await checkListRepository.getAll()
+            const checkListsFiltered = checkLists.filter(item => item.status_sync !== 1)
+            if (checkListsFiltered.length === 0){
+                console.log(`throw Error: empyt list:${endPoint}`)
+            }else{
+                const response = await httpRequest<{ ok: boolean }>({
+                        method: 'POST',
+                        endpoint: endPoint,
+                        BASE_URL: this.baseUrl,
+                        body: checkListsFiltered,
+                        headers: {Authorization: `Bearer ${this.authToken}`,}
+                })
+
+                if(response.ok){
+                    for(const checkList of checkListsFiltered){
+                        checkList.status_sync = 1
+                        await checkListRepository.update(checkList)
+                    }
+                }else{
+                    console.log(`throw Error: Failed to connect to endpoint:${endPoint}`)
+                }
+            }
+        } catch (err) {
+            throw err
         }
     }
 }

@@ -4,26 +4,46 @@ let pendingRequests = 0;
 const listeners = new Set<LoadingListener>();
 
 function notifyListeners() {
-  const isLoading = pendingRequests > 0;
+  try {
+    const isLoading = pendingRequests > 0;
 
-  listeners.forEach((listener) => listener(isLoading));
+    listeners.forEach((listener) => listener(isLoading));
+  } catch (err) {
+    throw err
+  }
 }
 
 export function beginRequestLoading() {
-  pendingRequests += 1;
-  notifyListeners();
+  try {
+    pendingRequests += 1;
+    notifyListeners();
+  } catch (err) {
+    throw err
+  }
 }
 
 export function endRequestLoading() {
-  pendingRequests = Math.max(0, pendingRequests - 1);
-  notifyListeners();
+  try {
+    pendingRequests = Math.max(0, pendingRequests - 1);
+    notifyListeners();
+  } catch (err) {
+    throw err
+  }
 }
 
 export function subscribeRequestLoading(listener: LoadingListener): () => void {
-  listeners.add(listener);
-  listener(pendingRequests > 0);
+  try {
+    listeners.add(listener);
+    listener(pendingRequests > 0);
 
-  return () => {
-    listeners.delete(listener);
-  };
+    return () => {
+      try {
+        listeners.delete(listener);
+      } catch (err) {
+        throw err
+      }
+    };
+  } catch (err) {
+    throw err
+  }
 }
