@@ -16,8 +16,12 @@ export default abstract class BaseRepository<T> {
   }
 
   async init() {
-    this.db = await Database.getInstance();
-    return this;
+    try {
+      this.db = await Database.getInstance();
+      return this;
+    } catch (error) {
+      throw error;
+    }
   }
 
   // ---------- helpers ----------
@@ -48,66 +52,86 @@ export default abstract class BaseRepository<T> {
 
   // ---------- CRUD ----------
   async getById(id: number | string): Promise<T | null> {
-    const pk = this.primaryKey();
+    try {
+      const pk = this.primaryKey();
 
-    const row = await this.db.getFirstAsync<any>(
-      `SELECT * FROM ${this.Model.table} WHERE ${pk} = ?`,
-      [id]
-    );
-    return row ? this.map(row) : null;
+      const row = await this.db.getFirstAsync<any>(
+        `SELECT * FROM ${this.Model.table} WHERE ${pk} = ?`,
+        [id]
+      );
+      return row ? this.map(row) : null;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getAll(): Promise<T[]> {
-    const rows = await this.db.getAllAsync<any>(
-      `SELECT * FROM ${this.Model.table}`
-    );
-    return rows.map(r => this.map(r));
+    try {
+      const rows = await this.db.getAllAsync<any>(
+        `SELECT * FROM ${this.Model.table}`
+      );
+      return rows.map(r => this.map(r));
+    } catch (error) {
+      throw error;
+    }
   }
 
   async save(entity: T): Promise<boolean> {
-    const allCols = this.columns();
-    const cols = allCols.filter(col => {
-      const def = this.Model.schema[col];
-      return !def.autoIncrement;
-    });
-    const placeholders = cols.map(() => "?").join(", ");
-    const values = cols.map(col => (entity as any)[col]);
+    try {
+      const allCols = this.columns();
+      const cols = allCols.filter(col => {
+        const def = this.Model.schema[col];
+        return !def.autoIncrement;
+      });
+      const placeholders = cols.map(() => "?").join(", ");
+      const values = cols.map(col => (entity as any)[col]);
 
-    const result = await this.db.runAsync(
-      `INSERT INTO ${this.Model.table} (${cols.join(", ")})
-       VALUES (${placeholders})`,
-      values
-    );
+      const result = await this.db.runAsync(
+        `INSERT INTO ${this.Model.table} (${cols.join(", ")})
+         VALUES (${placeholders})`,
+        values
+      );
 
-    return result.changes > 0;
+      return result.changes > 0;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async update(entity: T): Promise<boolean> {
-    const pk = this.primaryKey();
-    const cols = this.columns().filter(c => c !== pk);
-    const set = cols.map(c => `${c} = ?`).join(", ");
+    try {
+      const pk = this.primaryKey();
+      const cols = this.columns().filter(c => c !== pk);
+      const set = cols.map(c => `${c} = ?`).join(", ");
 
-    const values = cols.map(c => (entity as any)[c]);
-    values.push((entity as any)[pk]);
+      const values = cols.map(c => (entity as any)[c]);
+      values.push((entity as any)[pk]);
 
-    const result = await this.db.runAsync(
-      `UPDATE ${this.Model.table}
-       SET ${set}
-       WHERE ${pk} = ?`,
-      values
-    );
+      const result = await this.db.runAsync(
+        `UPDATE ${this.Model.table}
+         SET ${set}
+         WHERE ${pk} = ?`,
+        values
+      );
 
-    return result.changes > 0;
+      return result.changes > 0;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async delete(id: number | string): Promise<boolean> {
-    const pk = this.primaryKey();
+    try {
+      const pk = this.primaryKey();
 
-    const result = await this.db.runAsync(
-      `DELETE FROM ${this.Model.table} WHERE ${pk} = ?`,
-      [id]
-    );
-    return result.changes > 0;
+      const result = await this.db.runAsync(
+        `DELETE FROM ${this.Model.table} WHERE ${pk} = ?`,
+        [id]
+      );
+      return result.changes > 0;
+    } catch (error) {
+      throw error;
+    }
   }
 }
 

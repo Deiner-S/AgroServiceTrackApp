@@ -12,9 +12,13 @@ export default class CheckListItemRepository extends BaseRepository<CheckListIte
     return repo.init();
   }
   async deleteAll(){
-    const result = await this.db.runAsync(
-      `DELETE FROM ${this.Model.table}`
-    );
-    return result.changes > 0;
+    try {
+      const result = await this.db.runAsync(
+        `DELETE FROM ${this.Model.table}`
+      );
+      return result.changes > 0;
+    } catch (error) {
+      throw error;
+    }
   }
 }
