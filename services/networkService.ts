@@ -1,3 +1,5 @@
+import { executeAsyncWithLayerException } from '@/exceptions/AppLayerException';
+import NetworkServiceException from '@/exceptions/NetworkServiceException';
 import { clearTokenStorange } from '@/storange/authStorange';
 import NetInfo from '@react-native-community/netinfo';
 import { beginRequestLoading, endRequestLoading } from './requestLoadingService';
@@ -22,6 +24,7 @@ export async function httpRequest<T>(
   retried = false,
   controlLoading = true
 ): Promise<T> {
+  return executeAsyncWithLayerException(async () => {
     try {
       if (controlLoading) {
         beginRequestLoading();
@@ -39,35 +42,32 @@ export async function httpRequest<T>(
           return httpRequest<T>(options, true, false)
         } catch {
           await clearTokenStorange()
-          throw new Error('SESSION_EXPIRED')
+          throw new NetworkServiceException('SESSION_EXPIRED')
         }
       }
 
       if (!response.ok) {
-          const errorBody = await response.text();
-          throw new Error(`HTTP ${response.status} - ${errorBody || response.statusText}`);
+        const errorBody = await response.text();
+        throw new NetworkServiceException(`HTTP ${response.status} - ${errorBody || response.statusText}`);
       }
 
       return response.json() as Promise<T>;
-    } catch (err) {
-      throw err
     } finally {
       if (controlLoading) {
         endRequestLoading();
       }
     }
+  }, NetworkServiceException)
 }
 
 
 
 export async function hasWebAccess(): Promise<boolean> {
-    try {
+    return executeAsyncWithLayerException(async () => {
       const state = await NetInfo.fetch();
     
       return Boolean(
         state.isConnected && state.isInternetReachable
       );
-    } catch (err) {
-      throw err
-    }
+    }, NetworkServiceException)
 }

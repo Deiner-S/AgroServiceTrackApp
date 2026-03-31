@@ -14,6 +14,7 @@ import {
   saveChecklistItems as saveChecklistItemsService,
   saveWorkOrderData as saveWorkOrderDataService,
 } from '@/services/checklistService';
+import { executeControllerTask } from '@/services/controllerErrorService';
 import { takePhoto as takePhotoService } from '@/services/imageService';
 import { useRoute } from '@react-navigation/native';
 import { useEffect, useState } from 'react';
@@ -42,20 +43,24 @@ export default function useCheckListHook() {
     let isMounted = true;
 
     async function init() {
-      const nextWorkOrderRepository = await WorkOrderRepository.build();
-      const nextCheckListRepository = await CheckListRepository.build();
-      const checkListItemRepository = await CheckListItemReposytory.build();
+      await executeControllerTask(async () => {
+        const nextWorkOrderRepository = await WorkOrderRepository.build();
+        const nextCheckListRepository = await CheckListRepository.build();
+        const checkListItemRepository = await CheckListItemReposytory.build();
 
-      if (!isMounted) return;
+        if (!isMounted) return;
 
-      setWorkOrderRepository(nextWorkOrderRepository);
-      setCheckListRepository(nextCheckListRepository);
+        setWorkOrderRepository(nextWorkOrderRepository);
+        setCheckListRepository(nextCheckListRepository);
 
-      const data = await checkListItemRepository.getAll();
-      const filteredData = data.filter((item) => item.status !== 0);
+        const data = await checkListItemRepository.getAll();
+        const filteredData = data.filter((item) => item.status !== 0);
 
-      if (!isMounted) return;
-      setChecklistItems(filteredData);
+        if (!isMounted) return;
+        setChecklistItems(filteredData);
+      }, {
+        operation: 'carregar checklist',
+      });
     }
 
     init();
@@ -69,17 +74,21 @@ export default function useCheckListHook() {
     let cancelled = false;
 
     async function hydrateChecklistState() {
-      if (!checkListRepositor || checklistItems.length === 0) return;
+      await executeControllerTask(async () => {
+        if (!checkListRepositor || checklistItems.length === 0) return;
 
-      const hydratedState = await hydrateChecklistStateService(
-        checkListRepositor,
-        checklistItems,
-        workOrder.operation_code
-      );
+        const hydratedState = await hydrateChecklistStateService(
+          checkListRepositor,
+          checklistItems,
+          workOrder.operation_code
+        );
 
-      if (cancelled) return;
+        if (cancelled) return;
 
-      setChecklistState(hydratedState);
+        setChecklistState(hydratedState);
+      }, {
+        operation: 'carregar estado do checklist',
+      });
     }
 
     hydrateChecklistState();
@@ -166,22 +175,26 @@ export default function useCheckListHook() {
   }
 
   const takePhoto = async (itemID: string, target: 'in' | 'out' = 'in') => {
-    try {
+    const uri = await executeControllerTask(async () => {
       const uri = await takePhotoService();
 
       if (!uri) {
-        return;
+        return null;
       }
 
-      if (target === 'in') {
-        setItemPhotoInUri(itemID, uri);
-      } else {
-        setItemPhotoOutUri(itemID, uri);
-      }
-    } catch (error) {
-      if (error instanceof Error && error.message === 'CAMERA_PERMISSION_DENIED') {
-        alert('Permita acesso à câmera.');
-      }
+      return uri;
+    }, {
+      operation: 'capturar foto',
+    });
+
+    if (!uri) {
+      return;
+    }
+
+    if (target === 'in') {
+      setItemPhotoInUri(itemID, uri);
+    } else {
+      setItemPhotoOutUri(itemID, uri);
     }
   };
 

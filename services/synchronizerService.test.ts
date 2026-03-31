@@ -142,7 +142,7 @@ describe('synchronizerService', () => {
     const instance = await Synchronizer.build();
     (instance as any).authToken = 'access-token';
 
-    await expect((instance as any).receivePendingOrders('/send_work_orders_api/')).rejects.toThrow(error);
+    await expect((instance as any).receivePendingOrders('/send_work_orders_api/')).rejects.toThrow('request-failed');
   });
 
   it('receiveCheckListItems clears and repopulates repository', async () => {

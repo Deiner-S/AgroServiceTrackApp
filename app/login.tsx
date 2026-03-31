@@ -26,24 +26,8 @@ export default function Login() {
       return
     }
 
-    try {
-      await login(user, password)
-      router.replace('/(stack)/homeScreen')
-    } catch (err) {
-      const code = String(err)
-
-      if (code.includes('INACTIVE_USER')) {
-        Alert.alert('Acesso negado', 'Funcionario inativo. Procure um administrador.')
-        return
-      }
-
-      if (code.includes('INVALID_CREDENTIALS')) {
-        Alert.alert('Login', 'Usuario ou senha invalidos.')
-        return
-      }
-
-      Alert.alert('Login', 'Nao foi possivel realizar o login.')
-    }
+    await login(user, password)
+    router.replace('/(stack)/homeScreen')
   }
 
   return (

@@ -1,4 +1,8 @@
 import * as SQLite from "expo-sqlite";
+import {
+  executeAsyncWithLayerException,
+} from "@/exceptions/AppLayerException";
+import RepositoryException from "@/exceptions/RepositoryException";
 import Database from "./dbInit";
 import { ColumnDefinition } from "./types";
 type OrmModel<T> = {
@@ -16,12 +20,10 @@ export default abstract class BaseRepository<T> {
   }
 
   async init() {
-    try {
+    return executeAsyncWithLayerException(async () => {
       this.db = await Database.getInstance();
       return this;
-    } catch (error) {
-      throw error;
-    }
+    }, RepositoryException);
   }
 
   // ---------- helpers ----------
@@ -52,7 +54,7 @@ export default abstract class BaseRepository<T> {
 
   // ---------- CRUD ----------
   async getById(id: number | string): Promise<T | null> {
-    try {
+    return executeAsyncWithLayerException(async () => {
       const pk = this.primaryKey();
 
       const row = await this.db.getFirstAsync<any>(
@@ -60,24 +62,20 @@ export default abstract class BaseRepository<T> {
         [id]
       );
       return row ? this.map(row) : null;
-    } catch (error) {
-      throw error;
-    }
+    }, RepositoryException);
   }
 
   async getAll(): Promise<T[]> {
-    try {
+    return executeAsyncWithLayerException(async () => {
       const rows = await this.db.getAllAsync<any>(
         `SELECT * FROM ${this.Model.table}`
       );
       return rows.map(r => this.map(r));
-    } catch (error) {
-      throw error;
-    }
+    }, RepositoryException);
   }
 
   async save(entity: T): Promise<boolean> {
-    try {
+    return executeAsyncWithLayerException(async () => {
       const allCols = this.columns();
       const cols = allCols.filter(col => {
         const def = this.Model.schema[col];
@@ -93,13 +91,11 @@ export default abstract class BaseRepository<T> {
       );
 
       return result.changes > 0;
-    } catch (error) {
-      throw error;
-    }
+    }, RepositoryException);
   }
 
   async update(entity: T): Promise<boolean> {
-    try {
+    return executeAsyncWithLayerException(async () => {
       const pk = this.primaryKey();
       const cols = this.columns().filter(c => c !== pk);
       const set = cols.map(c => `${c} = ?`).join(", ");
@@ -115,13 +111,11 @@ export default abstract class BaseRepository<T> {
       );
 
       return result.changes > 0;
-    } catch (error) {
-      throw error;
-    }
+    }, RepositoryException);
   }
 
   async delete(id: number | string): Promise<boolean> {
-    try {
+    return executeAsyncWithLayerException(async () => {
       const pk = this.primaryKey();
 
       const result = await this.db.runAsync(
@@ -129,9 +123,7 @@ export default abstract class BaseRepository<T> {
         [id]
       );
       return result.changes > 0;
-    } catch (error) {
-      throw error;
-    }
+    }, RepositoryException);
   }
 }
 

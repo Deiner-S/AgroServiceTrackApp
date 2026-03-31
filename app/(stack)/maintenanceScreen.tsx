@@ -3,6 +3,7 @@ import { useSync } from "@/contexts/syncContext";
 import useMaintenanceHook from "@/hooks/maintenanceHook";
 import WorkOrder from "@/models/WorkOrder";
 import WorkOrderRepository from "@/repository/WorkOrderRepository";
+import { executeControllerTask } from "@/services/controllerErrorService";
 import { useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -63,22 +64,21 @@ export default function MaintenanceScreen() {
     setServiceEditorOpen(false);
   }
 
-
   async function handleSave() {
-    try {
+    await executeControllerTask(async () => {
       await saveService();
       await runSync();
       navigation.navigate(Routes.HOME);
-    } catch (error) {
-      console.error("Erro ao salvar serviço", error);
-    }
+    }, {
+      operation: 'salvar serviço',
+    });
   }
 
   if (!workOrderParam) {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.container}>
-          <Text style={styles.errorText}>Ordem de serviço não informada.</Text>
+          <Text style={styles.errorText}>Ordem de serviÃ§o nÃ£o informada.</Text>
         </View>
       </SafeAreaView>
     );
@@ -95,13 +95,13 @@ export default function MaintenanceScreen() {
 
         <View style={styles.divider} />
 
-        <Text style={styles.label}>Serviço realizado:</Text>
+        <Text style={styles.label}>ServiÃ§o realizado:</Text>
         <Pressable
           onPress={openServiceEditor}
           style={({ pressed }) => [styles.inputPreview, pressed && styles.inputPreviewPressed]}
         >
           <Text style={service ? styles.inputPreviewText : styles.inputPreviewPlaceholder}>
-            {service || "Toque para descrever o serviço realizado..."}
+            {service || "Toque para descrever o serviÃ§o realizado..."}
           </Text>
           <Text style={styles.editHint}>Toque para editar</Text>
         </Pressable>
@@ -140,10 +140,10 @@ export default function MaintenanceScreen() {
             onPress={applyServiceEditor}
           >
             <Pressable style={styles.modalCard} onPress={() => undefined}>
-              <Text style={styles.modalTitle}>Editar serviço realizado</Text>
+              <Text style={styles.modalTitle}>Editar serviÃ§o realizado</Text>
               <TextInput
                 style={styles.modalInput}
-                placeholder="Descreva o serviço realizado..."
+                placeholder="Descreva o serviÃ§o realizado..."
                 placeholderTextColor="#8e8e93"
                 value={serviceDraft}
                 onChangeText={setServiceDraft}

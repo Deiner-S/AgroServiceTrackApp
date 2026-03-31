@@ -1,5 +1,6 @@
 import CheckList from "@/models/CheckList";
 import CheckListItem from "@/models/CheckListItem";
+import ErrorLog from "@/models/ErrorLog";
 import WorkOrder from "@/models/WorkOrder";
 import * as any from "expo-sqlite";
 
@@ -7,6 +8,7 @@ const models = [
   WorkOrder,
   CheckList,
   CheckListItem,
+  ErrorLog,
 
 ]
 //Singleton: garante que só exista uma instância do banco de dados
@@ -52,7 +54,8 @@ export async function initDB(db: any): Promise<void> {
     await db.execAsync(`
         DROP TABLE IF EXISTS check_list_item;
         DROP TABLE IF EXISTS work_order;
-        DROP TABLE IF EXISTS check_list;`
+        DROP TABLE IF EXISTS check_list;
+        DROP TABLE IF EXISTS error_log;`
     )
     for (const model of models) {
       const sql = generateCreateTableSQL(model)

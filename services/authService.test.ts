@@ -33,7 +33,7 @@ describe('authService', () => {
       const error = new Error('storage-failure');
       mockGetTokenStorange.mockRejectedValue(error);
 
-      await expect(haveToken()).rejects.toThrow(error);
+      await expect(haveToken()).rejects.toThrow('storage-failure');
     });
   });
 
@@ -71,7 +71,7 @@ describe('authService', () => {
       const error = new Error('network-down');
       mockHttpRequest.mockRejectedValue(error);
 
-      await expect(requestToken({ username: 'user', password: 'pass' })).rejects.toThrow(error);
+      await expect(requestToken({ username: 'user', password: 'pass' })).rejects.toThrow('network-down');
     });
 
     it('throws REQUEST_FAILURE when tokens are missing from response', async () => {
@@ -118,7 +118,7 @@ describe('authService', () => {
       mockGetTokenStorange.mockResolvedValue({ access: 'old-access', refresh: 'refresh-token' });
       mockHttpRequest.mockRejectedValue(error);
 
-      await expect(refreshToken()).rejects.toThrow(error);
+      await expect(refreshToken()).rejects.toThrow('request-failed');
     });
   });
 });

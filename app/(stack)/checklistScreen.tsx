@@ -3,6 +3,7 @@ import HeaderOS from '@/components/checklistComponents/HeaderOS';
 import Signature from '@/components/checklistComponents/signature';
 import { useSync } from '@/contexts/syncContext';
 import useCheckListHook from '@/hooks/checkListHook';
+import { executeControllerTask } from '@/services/controllerErrorService';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import React from "react";
@@ -11,109 +12,107 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Routes } from '../routes';
 
 export default function CheckList() {
-  
   const checkList = useCheckListHook()
   const navigation = useNavigation<any>();
   const { runSync } = useSync();
   const hasSignature = !!checkList.signature;
 
   async function handleSave() {
-      try {
-        const checklistPayload = checkList.buildChecklistPayload("collection");
-        await checkList.saveData(checklistPayload);
-        await runSync();
-        navigation.navigate(Routes.HOME); 
-      } catch (error) {
-        console.error("Erro ao salvar formulário", error);
-      }
-    }
+    await executeControllerTask(async () => {
+      const checklistPayload = checkList.buildChecklistPayload("collection");
+      await checkList.saveData(checklistPayload);
+      await runSync();
+      navigation.navigate(Routes.HOME); 
+    }, {
+      operation: 'salvar checklist',
+    });
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#000" }} edges={['left', 'right', 'bottom']}>
       <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
         <HeaderOS
-            client={checkList.workOrder.client}
-            operation_code={checkList.workOrder.operation_code}
-            symptoms={checkList.workOrder.symptoms}
-            chassi={checkList.chassi}
-            setChassi={checkList.setChassi}
-            orimento={checkList.horimetro}
-            setOrimento={(value) => checkList.setHorimetro(Number(value) || 0)}
-            modelo={checkList.modelo}
-            setModelo={checkList.setModelo}
-            dateFilled={checkList.dateFilled}
-            openCalendar={checkList.openCalendar}
-            setOpen={checkList.setOpen}
-            onChange={checkList.onChange}
+          client={checkList.workOrder.client}
+          operation_code={checkList.workOrder.operation_code}
+          symptoms={checkList.workOrder.symptoms}
+          chassi={checkList.chassi}
+          setChassi={checkList.setChassi}
+          orimento={checkList.horimetro}
+          setOrimento={(value) => checkList.setHorimetro(Number(value) || 0)}
+          modelo={checkList.modelo}
+          setModelo={checkList.setModelo}
+          dateFilled={checkList.dateFilled}
+          openCalendar={checkList.openCalendar}
+          setOpen={checkList.setOpen}
+          onChange={checkList.onChange}
+        />
+
+        <View style={styles.divider} />
+
+        {checkList.checklistItems.map(item => (
+          <ChecklistBox
+            key={item.id}
+            checkList={item.name}
+            selected={checkList.checklistState.find(i => i.id === item.id)?.selected ?? null}
+            setSelected={(value) => checkList.setItemSelected(item.id, value)}
+            handleTakePhoto={() => checkList.takePhoto(item.id, "in")}
+            photoButtonLabel="Foto"
+            photoAttached={
+              (checkList.checklistState.find(i => i.id === item.id)?.hasPhotoIn ?? false) ||
+              !!checkList.checklistState.find(i => i.id === item.id)?.photoInUri
+            }
           />
-
-          <View style={styles.divider} />
-          
-          {checkList.checklistItems.map(item => (
-            <ChecklistBox
-              key={item.id}
-              checkList={item.name}
-              selected={checkList.checklistState.find(i => i.id === item.id)?.selected ?? null}
-              setSelected={(value) => checkList.setItemSelected(item.id, value)}
-              handleTakePhoto={() => checkList.takePhoto(item.id, "in")}
-              photoButtonLabel="Foto"
-              photoAttached={
-                (checkList.checklistState.find(i => i.id === item.id)?.hasPhotoIn ?? false) ||
-                !!checkList.checklistState.find(i => i.id === item.id)?.photoInUri
-              }
-            />
-          ))}
-          <View style={styles.content}>
-            <Pressable
-              disabled={hasSignature}
-              style={({ pressed }) => [
-                styles.signatureButton,
-                hasSignature && styles.signatureButtonDone,
-                !hasSignature && pressed && styles.signatureButtonPressed,
-              ]}
-              onPress={() => {
-                if (!hasSignature) checkList.setOpenSignature(true);
-              }}
-            >
-              <View style={styles.signatureContent}>
-                {hasSignature && (
-                  <Ionicons
-                    name="checkmark-circle"
-                    size={22}
-                    color="#14532d"
-                    style={{ marginRight: 8 }}
-                  />
-                )}
-                <Text style={styles.buttonText}>
-                  {hasSignature ? 'Assinado' : 'Assinar'}
-                </Text>
-              </View>
-            </Pressable>
-          </View>
-          <Modal visible={checkList.openSignature} animationType="slide">
-            <Signature
-              setSignature={checkList.setSignature}
-              onClose={() => checkList.setOpenSignature(false)}
-            />
-          </Modal>
-
-          <View style={styles.divider} />
-
-          <View style={styles.content}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.submitButton,
-                  pressed && styles.submitButtonPressed
-                ]}
-                onPress={handleSave}
-              >
-                <Text style={styles.buttonText}>Salvar</Text>
-              </Pressable>
+        ))}
+        <View style={styles.content}>
+          <Pressable
+            disabled={hasSignature}
+            style={({ pressed }) => [
+              styles.signatureButton,
+              hasSignature && styles.signatureButtonDone,
+              !hasSignature && pressed && styles.signatureButtonPressed,
+            ]}
+            onPress={() => {
+              if (!hasSignature) checkList.setOpenSignature(true);
+            }}
+          >
+            <View style={styles.signatureContent}>
+              {hasSignature && (
+                <Ionicons
+                  name="checkmark-circle"
+                  size={22}
+                  color="#14532d"
+                  style={{ marginRight: 8 }}
+                />
+              )}
+              <Text style={styles.buttonText}>
+                {hasSignature ? 'Assinado' : 'Assinar'}
+              </Text>
             </View>
+          </Pressable>
+        </View>
+        <Modal visible={checkList.openSignature} animationType="slide">
+          <Signature
+            setSignature={checkList.setSignature}
+            onClose={() => checkList.setOpenSignature(false)}
+          />
+        </Modal>
 
+        <View style={styles.divider} />
+
+        <View style={styles.content}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.submitButton,
+              pressed && styles.submitButtonPressed
+            ]}
+            onPress={handleSave}
+          >
+            <Text style={styles.buttonText}>Salvar</Text>
+          </Pressable>
+        </View>
       </ScrollView>
-  </SafeAreaView>
-);
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -127,7 +126,7 @@ const styles = StyleSheet.create({
   divider: {
     height: 2,
     width: "100%",
-    backgroundColor: "rgba(255, 255, 255, 0.2)", // levemente opaca
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     borderRadius: 2,
     marginVertical: 12,
   },
@@ -141,15 +140,12 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 320,
     height: 52,
-
-    backgroundColor: "#FDE68A", // amarelo pastel
+    backgroundColor: "#FDE68A",
     borderRadius: 12,
-
     alignItems: "center",
     justifyContent: "center",
-
-    elevation: 3, // Android shadow
-    shadowColor: "#000", // iOS shadow
+    elevation: 3,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -174,15 +170,12 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 320,
     height: 52,
-
-    backgroundColor: "#2563EB", // azul elegante
+    backgroundColor: "#2563EB",
     borderRadius: 12,
-
     alignItems: "center",
     justifyContent: "center",
-
-    elevation: 3, // Android shadow
-    shadowColor: "#000", // iOS shadow
+    elevation: 3,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -200,4 +193,3 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 });
-

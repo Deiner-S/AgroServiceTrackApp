@@ -1,5 +1,6 @@
 import WorkOrder from "@/models/WorkOrder";
 import WorkOrderRepository from "@/repository/WorkOrderRepository";
+import { executeControllerTask } from "@/services/controllerErrorService";
 import Synchronizer from "@/services/synchronizerService";
 import { useEffect, useState } from "react";
 
@@ -16,17 +17,25 @@ export default function useHomeHook() {
   const [selectedStatus, setSelectedStatus] = useState<string>("1");
 
   const loadWorkOrders = async () => {
-    const workOrderRepository = await WorkOrderRepository.build();
-    const data: WorkOrder[] = await workOrderRepository.getAll();
-    const visibleOrders = data.filter((order) => order.status !== "4");
-    setWorkOrders(visibleOrders);
+    return executeControllerTask(async () => {
+      const workOrderRepository = await WorkOrderRepository.build();
+      const data: WorkOrder[] = await workOrderRepository.getAll();
+      const visibleOrders = data.filter((order) => order.status !== "4");
+      setWorkOrders(visibleOrders);
+    }, {
+      operation: 'carregar ordens de serviço',
+    });
   };
 
   useEffect(() => {
     async function init() {
-      const synchronizer = await Synchronizer.build();
-      await synchronizer.run();
-      loadWorkOrders();
+      await executeControllerTask(async () => {
+        const synchronizer = await Synchronizer.build();
+        await synchronizer.run();
+        await loadWorkOrders();
+      }, {
+        operation: 'sincronizar ordens de serviço',
+      });
     }
     init();
   }, []);

@@ -1,47 +1,58 @@
+import {
+  executeAsyncWithLayerException,
+  executeWithLayerException,
+} from '@/exceptions/AppLayerException';
+import ImageServiceException from '@/exceptions/ImageServiceException';
 import * as ImagePicker from 'expo-image-picker';
 
 export function base64ToUint8Array(base64: string): Uint8Array {
-  const cleanBase64 = base64.replace(/^data:image\/\w+;base64,/, '');
-  const binary = atob(cleanBase64);
-  const len = binary.length;
-  const bytes = new Uint8Array(len);
+  return executeWithLayerException(() => {
+    const cleanBase64 = base64.replace(/^data:image\/\w+;base64,/, '');
+    const binary = atob(cleanBase64);
+    const len = binary.length;
+    const bytes = new Uint8Array(len);
 
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
 
-  return bytes;
+    return bytes;
+  }, ImageServiceException);
 }
 
 export async function readImageAsUint8Array(uri: string): Promise<Uint8Array> {
-  const response = await fetch(uri);
-  const blob = await response.blob();
+  return executeAsyncWithLayerException(async () => {
+    const response = await fetch(uri);
+    const blob = await response.blob();
 
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
 
-    reader.onloadend = () => {
-      const buffer = reader.result as ArrayBuffer;
-      resolve(new Uint8Array(buffer));
-    };
+      reader.onloadend = () => {
+        const buffer = reader.result as ArrayBuffer;
+        resolve(new Uint8Array(buffer));
+      };
 
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(blob);
-  });
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(blob);
+    });
+  }, ImageServiceException);
 }
 
 export async function takePhoto(): Promise<string | null> {
-  const permission = await ImagePicker.requestCameraPermissionsAsync();
+  return executeAsyncWithLayerException(async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
 
-  if (!permission.granted) {
-    throw new Error('CAMERA_PERMISSION_DENIED');
-  }
+    if (!permission.granted) {
+      throw new ImageServiceException('CAMERA_PERMISSION_DENIED');
+    }
 
-  const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
+    const result = await ImagePicker.launchCameraAsync({ quality: 0.7 });
 
-  if (result.canceled) {
-    return null;
-  }
+    if (result.canceled) {
+      return null;
+    }
 
-  return result.assets[0]?.uri ?? null;
+    return result.assets[0]?.uri ?? null;
+  }, ImageServiceException);
 }

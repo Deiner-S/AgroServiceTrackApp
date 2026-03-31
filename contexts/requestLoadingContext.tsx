@@ -1,3 +1,4 @@
+import { executeControllerTask } from '@/services/controllerErrorService';
 import {
   subscribeRequestLoading,
 } from '@/services/requestLoadingService';
@@ -19,7 +20,16 @@ export function RequestLoadingProvider({ children }: RequestLoadingProviderProps
   const [isRequestLoading, setIsRequestLoading] = useState(false);
 
   useEffect(() => {
-    return subscribeRequestLoading(setIsRequestLoading);
+    const subscription = executeControllerTask(async () => {
+      return subscribeRequestLoading(setIsRequestLoading);
+    }, {
+      operation: 'inicializar monitor de carregamento',
+      fallbackValue: () => undefined,
+    });
+
+    return () => {
+      void subscription.then((unsubscribe) => unsubscribe?.());
+    };
   }, []);
 
   return (

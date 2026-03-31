@@ -1,49 +1,44 @@
+import {
+  executeWithLayerException,
+} from '@/exceptions/AppLayerException';
+import RequestLoadingServiceException from '@/exceptions/RequestLoadingServiceException';
+
 type LoadingListener = (isLoading: boolean) => void;
 
 let pendingRequests = 0;
 const listeners = new Set<LoadingListener>();
 
 function notifyListeners() {
-  try {
+  return executeWithLayerException(() => {
     const isLoading = pendingRequests > 0;
 
     listeners.forEach((listener) => listener(isLoading));
-  } catch (err) {
-    throw err
-  }
+  }, RequestLoadingServiceException);
 }
 
 export function beginRequestLoading() {
-  try {
+  return executeWithLayerException(() => {
     pendingRequests += 1;
     notifyListeners();
-  } catch (err) {
-    throw err
-  }
+  }, RequestLoadingServiceException);
 }
 
 export function endRequestLoading() {
-  try {
+  return executeWithLayerException(() => {
     pendingRequests = Math.max(0, pendingRequests - 1);
     notifyListeners();
-  } catch (err) {
-    throw err
-  }
+  }, RequestLoadingServiceException);
 }
 
 export function subscribeRequestLoading(listener: LoadingListener): () => void {
-  try {
+  return executeWithLayerException(() => {
     listeners.add(listener);
     listener(pendingRequests > 0);
 
     return () => {
-      try {
+      return executeWithLayerException(() => {
         listeners.delete(listener);
-      } catch (err) {
-        throw err
-      }
+      }, RequestLoadingServiceException);
     };
-  } catch (err) {
-    throw err
-  }
+  }, RequestLoadingServiceException);
 }

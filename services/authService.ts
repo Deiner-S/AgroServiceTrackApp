@@ -1,4 +1,6 @@
 import { AuthTokens, getTokenStorange, saveTokenStorange } from "@/storange/authStorange"
+import AuthServiceException from "@/exceptions/AuthServiceException";
+import { executeAsyncWithLayerException } from "@/exceptions/AppLayerException";
 import { httpRequest } from "./networkService"
 
 type login = {
@@ -7,16 +9,14 @@ type login = {
 }
 
 export async function haveToken(): Promise<boolean> {
-  try {
+  return executeAsyncWithLayerException(async () => {
     const token = await getTokenStorange()
     return token?.access != null
-  } catch (err) {
-    throw err
-  }
+  }, AuthServiceException)
 }
 
 export async function requestToken({ username, password }: login) {
-  try {
+  return executeAsyncWithLayerException(async () => {
     const response = await httpRequest<AuthTokens>({
       method: 'POST',
       endpoint: '/api/token/',
@@ -31,23 +31,23 @@ export async function requestToken({ username, password }: login) {
       access: response.access,
       refresh: response.refresh
     })
-  } catch (err) {
+  }, AuthServiceException, (err) => {
     const message = String(err)
 
     if (message.includes('no_active_account') || message.toLowerCase().includes('inativo')) {
-      throw new Error('INACTIVE_USER')
+      return new AuthServiceException('INACTIVE_USER', err)
     }
 
     if (message.includes('401')) {
-      throw new Error('INVALID_CREDENTIALS')
+      return new AuthServiceException('INVALID_CREDENTIALS', err)
     }
 
-    throw err
-  }
+    return null
+  })
 }
 
 export async function refreshToken(): Promise<void> {
-  try {
+  return executeAsyncWithLayerException(async () => {
     const tokens = await getTokenStorange()
     if (!tokens?.refresh) throw new Error('NO_REFRESH_TOKEN')
 
@@ -64,7 +64,5 @@ export async function refreshToken(): Promise<void> {
       access: response.access,
       refresh: tokens.refresh,
     })
-  } catch (err) {
-    throw err
-  }
+  }, AuthServiceException)
 }

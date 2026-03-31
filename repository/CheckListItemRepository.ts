@@ -1,4 +1,6 @@
 import CheckListItem from "@/models/CheckListItem";
+import { executeAsyncWithLayerException } from "@/exceptions/AppLayerException";
+import RepositoryException from "@/exceptions/RepositoryException";
 import BaseRepository from "./BaseRepository";
 export default class CheckListItemRepository extends BaseRepository<CheckListItem> {
 
@@ -12,13 +14,11 @@ export default class CheckListItemRepository extends BaseRepository<CheckListIte
     return repo.init();
   }
   async deleteAll(){
-    try {
+    return executeAsyncWithLayerException(async () => {
       const result = await this.db.runAsync(
         `DELETE FROM ${this.Model.table}`
       );
       return result.changes > 0;
-    } catch (error) {
-      throw error;
-    }
+    }, RepositoryException);
   }
 }

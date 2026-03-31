@@ -1,4 +1,5 @@
 // sync/SyncContext.tsx
+import { executeControllerTask } from '@/services/controllerErrorService';
 import Synchronizer from '@/services/synchronizerService';
 import { createContext, ReactNode, useContext, useState } from 'react';
 
@@ -12,9 +13,13 @@ export function SyncProvider({ children }:SyncProviderProps) {
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
 
   const runSync = async () => {
+    await executeControllerTask(async () => {
       const synchronizer = await Synchronizer.build()
       await synchronizer.run()
       setLastSyncAt(Date.now())
+    }, {
+      operation: 'executar sincronização',
+    })
   }
 
 

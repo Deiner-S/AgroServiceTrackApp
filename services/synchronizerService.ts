@@ -1,5 +1,7 @@
 import CheckListItem from "@/models/CheckListItem";
 import WorkOrder from "@/models/WorkOrder";
+import { executeAsyncWithLayerException } from "@/exceptions/AppLayerException";
+import SynchronizerServiceException from "@/exceptions/SynchronizerServiceException";
 import CheckListItemRepository from "@/repository/CheckListItemRepository";
 import CheckListRepository from '@/repository/CheckListRepository';
 import WorkOrderRepository from "@/repository/WorkOrderRepository";
@@ -22,15 +24,13 @@ export default class Synchronizer{
     }
 
     static async build(): Promise<Synchronizer> {
-        try {
+        return executeAsyncWithLayerException(async () => {
             const instance = new Synchronizer();
             return instance;
-        } catch (err) {
-            throw err
-        }
+        }, SynchronizerServiceException)
     }
     public async run(): Promise<void>{
-        try{        
+        return executeAsyncWithLayerException(async () => {        
             if(!await hasWebAccess()) throw Error("MISSING_WEB_ACCESS")
                 
             console.log("getToken")
@@ -48,15 +48,15 @@ export default class Synchronizer{
             console.log("sinc4")
             await this.sendCheckListsFilleds("/receive_checklist_api/")
             
-        }catch(err){
+        }, SynchronizerServiceException, (err) => {
             console.log(`log Error: ${err}`)
-            throw err
-        }
+            return null
+        })
         
     }
 
     private async receivePendingOrders(endPoint:string) {
-        try {
+        return executeAsyncWithLayerException(async () => {
             const workOrders = await httpRequest<WorkOrder[]>({
                 method: 'GET',
                 endpoint: endPoint,
@@ -76,13 +76,11 @@ export default class Synchronizer{
                     await workOrderRepository.save(workOrder)
                 }
             }
-        } catch (err) {
-            throw err
-        }
+        }, SynchronizerServiceException)
     }
 
     private async receiveCheckListItems(endPoint:string){
-        try {
+        return executeAsyncWithLayerException(async () => {
             const checklistItemList = await httpRequest<CheckListItem[]>({
                 method: 'GET',
                 endpoint: endPoint,
@@ -99,13 +97,11 @@ export default class Synchronizer{
             for(const item of checklistItemList){
                 await checkListItemRepository.save(item)
             }
-        } catch (err) {
-            throw err
-        }
+        }, SynchronizerServiceException)
     }
 
     private async sendWorkOrders(endPoint:string){
-        try {
+        return executeAsyncWithLayerException(async () => {
             const workOrderRepository = await WorkOrderRepository.build()
             const workOrders = await workOrderRepository.getAll()
             const workOrdersFiltered = await workOrders.filter(item => item.status_sync !== 1)
@@ -132,13 +128,11 @@ export default class Synchronizer{
                     console.log(`throw Error: Failed to connect to endpoint:${endPoint}`)
                 }
             }
-        } catch (err) {
-            throw err
-        }
+        }, SynchronizerServiceException)
     }
 
     private async sendCheckListsFilleds(endPoint:string){
-        try {
+        return executeAsyncWithLayerException(async () => {
             const checkListRepository = await CheckListRepository.build()
             const checkLists = await checkListRepository.getAll()
             const checkListsFiltered = checkLists.filter(item => item.status_sync !== 1)
@@ -162,9 +156,7 @@ export default class Synchronizer{
                     console.log(`throw Error: Failed to connect to endpoint:${endPoint}`)
                 }
             }
-        } catch (err) {
-            throw err
-        }
+        }, SynchronizerServiceException)
     }
 }
 
