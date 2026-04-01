@@ -1,5 +1,6 @@
 import WorkOrder from "@/models/WorkOrder";
 import WorkOrderRepository from "@/repository/WorkOrderRepository";
+import { validateServiceText } from "@/utils/validation";
 import { useEffect, useState } from "react";
 
 export default function useMaintenanceHook(workOrder: WorkOrder) {
@@ -16,7 +17,7 @@ export default function useMaintenanceHook(workOrder: WorkOrder) {
       const repo = await WorkOrderRepository.build();
       const updated: WorkOrder = {
         ...workOrder,
-        service,
+        service: validateServiceText(service),
         status: "3",
         status_sync: 0,
       };

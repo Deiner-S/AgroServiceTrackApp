@@ -8,6 +8,7 @@ import { ColumnDefinition } from "./types";
 type OrmModel<T> = {
   table: string;
   schema: Record<string, ColumnDefinition>;
+  validate?: (entity: T) => T;
   new (...args: any[]): T;
 };
 
@@ -49,7 +50,8 @@ export default abstract class BaseRepository<T> {
 
   protected map(row: any): T {
     const args = this.columns().map(c => row[c]);
-    return new this.Model(...args);
+    const entity = new this.Model(...args);
+    return this.Model.validate ? this.Model.validate(entity) : entity;
   }
 
   // ---------- CRUD ----------
@@ -76,13 +78,14 @@ export default abstract class BaseRepository<T> {
 
   async save(entity: T): Promise<boolean> {
     return executeAsyncWithLayerException(async () => {
+      const validatedEntity = this.Model.validate ? this.Model.validate(entity) : entity;
       const allCols = this.columns();
       const cols = allCols.filter(col => {
         const def = this.Model.schema[col];
         return !def.autoIncrement;
       });
       const placeholders = cols.map(() => "?").join(", ");
-      const values = cols.map(col => (entity as any)[col]);
+      const values = cols.map(col => (validatedEntity as any)[col]);
 
       const result = await this.db.runAsync(
         `INSERT INTO ${this.Model.table} (${cols.join(", ")})
@@ -96,12 +99,13 @@ export default abstract class BaseRepository<T> {
 
   async update(entity: T): Promise<boolean> {
     return executeAsyncWithLayerException(async () => {
+      const validatedEntity = this.Model.validate ? this.Model.validate(entity) : entity;
       const pk = this.primaryKey();
       const cols = this.columns().filter(c => c !== pk);
       const set = cols.map(c => `${c} = ?`).join(", ");
 
-      const values = cols.map(c => (entity as any)[c]);
-      values.push((entity as any)[pk]);
+      const values = cols.map(c => (validatedEntity as any)[c]);
+      values.push((validatedEntity as any)[pk]);
 
       const result = await this.db.runAsync(
         `UPDATE ${this.Model.table}

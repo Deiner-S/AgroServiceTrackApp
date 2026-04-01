@@ -25,11 +25,11 @@ function createWorkOrder(): WorkOrder {
     operation_code: 'wo-1',
     client: 'Client',
     symptoms: 'Symptoms',
-    chassi: 'old-chassi',
+    chassi: '1HGCM82633A123456',
     horimetro: 10,
-    model: 'old-model',
-    date_in: undefined,
-    date_out: undefined,
+    model: 'oldmodel',
+    date_in: '2026-03-31T12:00:00.000Z',
+    date_out: '2026-03-31T13:00:00.000Z',
     status: '1',
     status_sync: 1,
     service: undefined,
@@ -51,7 +51,7 @@ describe('checklistService', () => {
           id: 'row-1',
           checklist_item_fk: 'item-1',
           work_order_fk: 'wo-1',
-          status: 'ok',
+          status: '1',
           img_in: new Uint8Array([1]),
           img_out: null,
         },
@@ -71,7 +71,7 @@ describe('checklistService', () => {
       {
         id: 'item-1',
         checklistId: 'row-1',
-        selected: 'ok',
+        selected: '1',
         photoInUri: null,
         photoOutUri: null,
         hasPhotoIn: true,
@@ -98,18 +98,18 @@ describe('checklistService', () => {
       workOrder,
       checklistState: [
         {
-          id: 'item-1',
-          checklistId: 'row-1',
-          selected: 'ok',
+          id: '550e8400-e29b-41d4-a716-446655440001',
+          checklistId: '550e8400-e29b-41d4-a716-446655440010',
+          selected: '1',
           photoInUri: 'file://photo-in.jpg',
           photoOutUri: 'file://photo-out.jpg',
           hasPhotoIn: true,
           hasPhotoOut: true,
         },
       ],
-      chassi: 'new-chassi',
+      chassi: '1HGCM82633A654321',
       horimetro: 20,
-      modelo: 'new-model',
+      modelo: 'newmodel',
       dateFilled,
       signature: 'signature-data',
     });
@@ -118,18 +118,18 @@ describe('checklistService', () => {
       stage: 'collection',
       workOrder,
       workOrderUpdate: {
-        chassi: 'new-chassi',
+        chassi: '1HGCM82633A654321',
         horimetro: 20,
-        model: 'new-model',
+        model: 'newmodel',
         date_in: dateFilled.toISOString(),
         status: '2',
         signature_in: 'signature-data',
       },
       items: [
         {
-          checklist_id: 'row-1',
-          checklist_item_fk: 'item-1',
-          status: 'ok',
+          checklist_id: '550e8400-e29b-41d4-a716-446655440010',
+          checklist_item_fk: '550e8400-e29b-41d4-a716-446655440001',
+          status: '1',
           photoInUri: 'file://photo-in.jpg',
           photoOutUri: null,
         },
@@ -155,7 +155,11 @@ describe('checklistService', () => {
       stage: 'collection',
       workOrder: createWorkOrder(),
       workOrderUpdate: {
-        chassi: 'updated',
+        chassi: '1HGCM82633A654321',
+        horimetro: 10,
+        model: 'oldmodel',
+        date_in: '2026-03-31T12:00:00.000Z',
+        status: '2',
         signature_in: 'base64-signature',
       },
       items: [],
@@ -164,7 +168,7 @@ describe('checklistService', () => {
     expect(mockBase64ToUint8Array).toHaveBeenCalledWith('base64-signature');
     expect(repository.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        chassi: 'updated',
+        chassi: '1HGCM82633A654321',
         status_sync: 0,
         signature_in: new Uint8Array([9, 9]),
       })
@@ -176,9 +180,9 @@ describe('checklistService', () => {
       getAll: jest.fn().mockResolvedValue([
         {
           id: 'existing-row',
-          checklist_item_fk: 'item-1',
+          checklist_item_fk: '550e8400-e29b-41d4-a716-446655440001',
           work_order_fk: 'wo-1',
-          status: 'ok',
+          status: '1',
           img_in: new Uint8Array([1]),
           img_out: null,
         },
@@ -196,15 +200,15 @@ describe('checklistService', () => {
       workOrder: createWorkOrder(),
       items: [
         {
-          checklist_id: 'existing-row',
-          checklist_item_fk: 'item-1',
-          status: 'nok',
+          checklist_id: '550e8400-e29b-41d4-a716-446655440010',
+          checklist_item_fk: '550e8400-e29b-41d4-a716-446655440001',
+          status: '2',
           photoInUri: 'file://in.jpg',
           photoOutUri: null,
         },
         {
-          checklist_item_fk: 'item-2',
-          status: 'ok',
+          checklist_item_fk: '550e8400-e29b-41d4-a716-446655440002',
+          status: '1',
           photoInUri: null,
           photoOutUri: 'file://out.jpg',
         },
@@ -214,19 +218,41 @@ describe('checklistService', () => {
     expect(repository.update).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'existing-row',
-        checklist_item_fk: 'item-1',
-        status: 'nok',
+        checklist_item_fk: '550e8400-e29b-41d4-a716-446655440001',
+        status: '2',
         img_in: new Uint8Array([2]),
       })
     );
     expect(repository.save).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'generated-uuid',
-        checklist_item_fk: 'item-2',
+        checklist_item_fk: '550e8400-e29b-41d4-a716-446655440002',
         work_order_fk: 'wo-1',
-        status: 'ok',
+        status: '1',
         img_out: new Uint8Array([3]),
       })
     );
+  });
+
+  it('rejects invalid collection payload before persisting', async () => {
+    const repository = {
+      update: jest.fn().mockResolvedValue(true),
+    };
+
+    await expect(
+      saveWorkOrderData(repository as any, {
+        stage: 'collection',
+        workOrder: createWorkOrder(),
+        workOrderUpdate: {
+          chassi: 'invalid',
+          horimetro: 10,
+          model: 'oldmodel',
+          date_in: '2026-03-31T12:00:00.000Z',
+          status: '2',
+          signature_in: 'signature-data',
+        },
+        items: [],
+      })
+    ).rejects.toThrow('chassi invalido');
   });
 });

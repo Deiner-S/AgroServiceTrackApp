@@ -1,5 +1,5 @@
 import { executeControllerTask } from './controllerErrorService';
-import { handleHighLevelError } from '@/util/loggingUtil';
+import { handleHighLevelError } from '@/utils/loggingUtil';
 
 jest.mock('@/util/loggingUtil', () => ({
   handleHighLevelError: jest.fn(),

@@ -1,6 +1,10 @@
 import DateTimePicker from "@react-native-community/datetimepicker";
 import React from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  sanitizeOnlyLettersAndNumbers,
+  sanitizeOnlyNumbers,
+} from "@/utils/validation";
 
 interface CabecalhoOSProps {
   client: string;
@@ -40,7 +44,9 @@ export default function HeaderOS({
           placeholder="Chassi"
           placeholderTextColor="#8e8e93"
           value={chassi}
-          onChangeText={setChassi}
+          onChangeText={(value) => setChassi(sanitizeOnlyLettersAndNumbers(value).toUpperCase())}
+          autoCapitalize="characters"
+          maxLength={17}
         />
 
         <TextInput
@@ -48,7 +54,8 @@ export default function HeaderOS({
           placeholder="Horimetro"
           placeholderTextColor="#8e8e93"
           value={orimento}
-          onChangeText={setOrimento}
+          onChangeText={(value) => setOrimento(sanitizeOnlyNumbers(value))}
+          keyboardType="numeric"
         />
 
         <TextInput
@@ -56,7 +63,7 @@ export default function HeaderOS({
           placeholder="Modelo"
           placeholderTextColor="#8e8e93"
           value={modelo}
-          onChangeText={setModelo}
+          onChangeText={(value) => setModelo(sanitizeOnlyLettersAndNumbers(value))}
         />
 
         <Pressable

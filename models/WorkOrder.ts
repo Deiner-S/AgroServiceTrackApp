@@ -1,4 +1,5 @@
 import { ColumnDefinition } from "@/repository/types";
+import { validateWorkOrderEntity } from "@/utils/validation";
 
 export default class WorkOrder{
   // 🔹 Nome da tabela derivado automaticamente
@@ -24,6 +25,10 @@ export default class WorkOrder{
     signature_out: { type: "BLOB" },
     insertDate: { type: "TEXT" }
   };
+
+  static validate(entity: WorkOrder): WorkOrder {
+    return validateWorkOrderEntity(entity);
+  }
 
   constructor(
     public operation_code: string,

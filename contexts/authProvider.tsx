@@ -37,8 +37,8 @@ export function AuthProvider({ children }: props) {
     })
   }
 
-  function logout() {
-    clearTokenStorange()
+  async function logout() {
+    await clearTokenStorange()
     setloged(false)
   }
 

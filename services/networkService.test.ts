@@ -81,6 +81,7 @@ describe('networkService', () => {
     });
 
     it('retries once after a 401 response', async () => {
+      mockRefreshToken.mockResolvedValue('new-access-token');
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce({
           status: 401,
@@ -104,6 +105,14 @@ describe('networkService', () => {
 
       expect(mockRefreshToken).toHaveBeenCalledTimes(1);
       expect(global.fetch).toHaveBeenCalledTimes(2);
+      expect(global.fetch).toHaveBeenNthCalledWith(2, 'https://example.com/orders', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer new-access-token',
+        },
+        body: undefined,
+      });
     });
 
     it('clears token and throws SESSION_EXPIRED when refresh fails', async () => {
@@ -154,7 +163,7 @@ describe('networkService', () => {
           endpoint: '/orders',
           BASE_URL: 'https://example.com',
         })
-      ).rejects.toThrow(error);
+      ).rejects.toThrow('network-down');
     });
   });
 
@@ -181,7 +190,7 @@ describe('networkService', () => {
       const error = new Error('netinfo-failed');
       mockNetInfoFetch.mockRejectedValue(error);
 
-      await expect(hasWebAccess()).rejects.toThrow(error);
+      await expect(hasWebAccess()).rejects.toThrow('netinfo-failed');
     });
   });
 });

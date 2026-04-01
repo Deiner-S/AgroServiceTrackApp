@@ -47,10 +47,29 @@ const mockCheckListItemBuild = CheckListItemRepository.build as jest.Mock;
 
 describe('synchronizerService', () => {
   const makeWorkOrder = (statusSync = 0) =>
-    new WorkOrder('OP-1', 'Client', 'Symptoms', undefined, undefined, undefined, undefined, undefined, 'OPEN', statusSync);
+    new WorkOrder(
+      'OP-1',
+      'Client',
+      'Symptoms',
+      '1HGCM82633A123456',
+      123,
+      'TRATOR2026',
+      '2026-03-31T12:00:00.000Z',
+      '2026-03-31T13:00:00.000Z',
+      '4',
+      statusSync,
+      'Troca filtro'
+    );
 
-  const makeCheckListItem = () => new CheckListItem('ITEM-1', 'Item', 0);
-  const makeCheckList = (statusSync = 0) => new CheckList('CHK-1', 'ITEM-1', 'OP-1', 'OK', statusSync);
+  const makeCheckListItem = () => new CheckListItem('550e8400-e29b-41d4-a716-446655440100', 'Item', 0);
+  const makeCheckList = (statusSync = 0) =>
+    new CheckList(
+      '550e8400-e29b-41d4-a716-446655440000',
+      '550e8400-e29b-41d4-a716-446655440100',
+      'OP-1',
+      '1',
+      statusSync
+    );
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -116,9 +135,31 @@ describe('synchronizerService', () => {
     expect(checkListRepo.update).toHaveBeenCalledTimes(1);
   });
 
+  it('run rethrows SESSION_EXPIRED to allow redirect to login', async () => {
+    mockHasWebAccess.mockResolvedValue(true);
+    mockGetTokenStorange.mockResolvedValue({ access: 'access-token', refresh: 'refresh-token' });
+    mockHttpRequest.mockRejectedValue(new Error('SESSION_EXPIRED'));
+
+    const instance = await Synchronizer.build();
+
+    await expect(instance.run()).rejects.toThrow('SESSION_EXPIRED');
+  });
+
   it('receivePendingOrders saves only missing orders', async () => {
     const existingOrder = makeWorkOrder(0);
-    const newOrder = new WorkOrder('OP-2', 'Client 2', 'Symptoms 2', undefined, undefined, undefined, undefined, undefined, 'OPEN', 0);
+    const newOrder = new WorkOrder(
+      'OP-2',
+      'Client 2',
+      'Symptoms 2',
+      '1HGCM82633A123457',
+      456,
+      'TRATOR2027',
+      '2026-03-31T12:00:00.000Z',
+      '2026-03-31T13:00:00.000Z',
+      '4',
+      0,
+      'Troca oleo'
+    );
     const workOrderRepo = {
       getById: jest.fn().mockResolvedValueOnce(existingOrder).mockResolvedValueOnce(null),
       save: jest.fn(),
@@ -132,7 +173,7 @@ describe('synchronizerService', () => {
     await expect((instance as any).receivePendingOrders('/send_work_orders_api/')).resolves.toBeUndefined();
 
     expect(workOrderRepo.save).toHaveBeenCalledTimes(1);
-    expect(newOrder.status_sync).toBe(1);
+    expect(workOrderRepo.save).toHaveBeenCalledWith(expect.objectContaining({ operation_code: 'OP-2', status_sync: 1 }));
   });
 
   it('receivePendingOrders rethrows request errors', async () => {
@@ -181,7 +222,18 @@ describe('synchronizerService', () => {
       method: 'POST',
       endpoint: '/receive_work_orders_api/',
       BASE_URL: 'https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador',
-      body: [pendingOrder],
+      body: [
+        {
+          operation_code: 'OP-1',
+          chassi: '1HGCM82633A123456',
+          horimetro: '123',
+          model: 'TRATOR2026',
+          date_in: '2026-03-31T12:00:00.000Z',
+          date_out: '2026-03-31T13:00:00.000Z',
+          status: '4',
+          service: 'Troca filtro',
+        },
+      ],
       headers: { Authorization: 'Bearer access-token' },
     });
     expect(workOrderRepo.update).toHaveBeenCalledTimes(1);
@@ -223,7 +275,16 @@ describe('synchronizerService', () => {
       method: 'POST',
       endpoint: '/receive_checklist_api/',
       BASE_URL: 'https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador',
-      body: [pendingCheckList],
+      body: [
+        {
+          id: '550e8400-e29b-41d4-a716-446655440000',
+          checklist_item_fk: '550e8400-e29b-41d4-a716-446655440100',
+          work_order_fk: 'OP-1',
+          status: '1',
+          img_in: null,
+          img_out: null,
+        },
+      ],
       headers: { Authorization: 'Bearer access-token' },
     });
     expect(checkListRepo.update).toHaveBeenCalledTimes(1);

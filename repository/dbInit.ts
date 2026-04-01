@@ -56,7 +56,7 @@ export async function initDB(db: any): Promise<void> {
         DROP TABLE IF EXISTS work_order;
         DROP TABLE IF EXISTS check_list;
         DROP TABLE IF EXISTS error_log;`
-    )
+     )
     for (const model of models) {
       const sql = generateCreateTableSQL(model)
       await db.execAsync(sql)

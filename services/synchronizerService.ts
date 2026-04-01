@@ -7,6 +7,16 @@ import CheckListRepository from '@/repository/CheckListRepository';
 import WorkOrderRepository from "@/repository/WorkOrderRepository";
 import { hasWebAccess, httpRequest } from "@/services/networkService";
 import {getTokenStorange } from "@/storange/authStorange";
+import { getErrorMessage } from "@/exceptions/AppLayerException";
+import {
+    buildChecklistApiPayload,
+    buildWorkOrderApiPayload,
+    validateCheckListItemApiResponse,
+    validateChecklistApiEntries,
+    validateOkResponse,
+    validateWorkOrderApiEntries,
+    validateWorkOrderApiResponse,
+} from "@/utils/validation";
 
 
 // tasks
@@ -50,6 +60,9 @@ export default class Synchronizer{
             
         }, SynchronizerServiceException, (err) => {
             console.log(`log Error: ${err}`)
+            if (getErrorMessage(err).includes("SESSION_EXPIRED")) {
+                return new SynchronizerServiceException("SESSION_EXPIRED", err)
+            }
             return null
         })
         
@@ -63,13 +76,11 @@ export default class Synchronizer{
                 BASE_URL: this.baseUrl,
                 headers: {Authorization: `Bearer ${this.authToken}`,}
             })
-            console.log(workOrders)
-            if(!workOrders){
-                console.log(`throw Error: Failed to connect to endpoint:${endPoint}`)
-            }
+            const validatedWorkOrders = validateWorkOrderApiResponse(workOrders)
+            console.log(validatedWorkOrders)
 
             const workOrderRepository = await WorkOrderRepository.build()
-            for(const workOrder of workOrders){
+            for(const workOrder of validatedWorkOrders){
                 const order_exists = await workOrderRepository.getById(workOrder.operation_code)
                 if(!order_exists){
                     workOrder.status_sync = 1
@@ -87,14 +98,11 @@ export default class Synchronizer{
                 BASE_URL: this.baseUrl,
                 headers: {Authorization: `Bearer ${this.authToken}`,}
             })
-
-            if(!checklistItemList){
-                console.log(`throw Error: Failed to connect to endpoint:${endPoint}`)
-            }
+            const validatedChecklistItems = validateCheckListItemApiResponse(checklistItemList)
 
             const checkListItemRepository = await CheckListItemRepository.build();
             await checkListItemRepository.deleteAll()
-            for(const item of checklistItemList){
+            for(const item of validatedChecklistItems){
                 await checkListItemRepository.save(item)
             }
         }, SynchronizerServiceException)
@@ -105,8 +113,9 @@ export default class Synchronizer{
             const workOrderRepository = await WorkOrderRepository.build()
             const workOrders = await workOrderRepository.getAll()
             const workOrdersFiltered = await workOrders.filter(item => item.status_sync !== 1)
+            const validatedWorkOrders = validateWorkOrderApiEntries(workOrdersFiltered.map((item) => buildWorkOrderApiPayload(item)))
 
-            if (workOrdersFiltered.length === 0){
+            if (validatedWorkOrders.length === 0){
                 console.log(`throw Error: empyt list:${endPoint}`)
 
             }else{
@@ -115,12 +124,13 @@ export default class Synchronizer{
                     method: 'POST',
                     endpoint: endPoint,
                     BASE_URL: this.baseUrl,
-                    body: workOrdersFiltered,
+                    body: validatedWorkOrders,
                     headers: {Authorization: `Bearer ${this.authToken}`,}
                 })
+                const validatedResponse = validateOkResponse(response)
 
-                if(response.ok){
-                    for(const workOrder of workOrdersFiltered){
+                if(validatedResponse.ok){
+                    for(const workOrder of validatedWorkOrders.map((entry) => workOrdersFiltered.find((item) => item.operation_code === entry.operation_code)!)){
                         workOrder.status_sync = 1
                         await workOrderRepository.update(workOrder)
                     }
@@ -136,18 +146,21 @@ export default class Synchronizer{
             const checkListRepository = await CheckListRepository.build()
             const checkLists = await checkListRepository.getAll()
             const checkListsFiltered = checkLists.filter(item => item.status_sync !== 1)
-            if (checkListsFiltered.length === 0){
+            const validatedChecklists = validateChecklistApiEntries(checkListsFiltered.map((item) => buildChecklistApiPayload(item)))
+
+            if (validatedChecklists.length === 0){
                 console.log(`throw Error: empyt list:${endPoint}`)
             }else{
                 const response = await httpRequest<{ ok: boolean }>({
                         method: 'POST',
                         endpoint: endPoint,
                         BASE_URL: this.baseUrl,
-                        body: checkListsFiltered,
+                        body: validatedChecklists,
                         headers: {Authorization: `Bearer ${this.authToken}`,}
                 })
+                const validatedResponse = validateOkResponse(response)
 
-                if(response.ok){
+                if(validatedResponse.ok){
                     for(const checkList of checkListsFiltered){
                         checkList.status_sync = 1
                         await checkListRepository.update(checkList)

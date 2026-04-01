@@ -8,6 +8,7 @@ import {
 import ChecklistServiceException from '@/exceptions/ChecklistServiceException';
 import CheckListRepository from '@/repository/CheckListRepository';
 import WorkOrderRepository from '@/repository/WorkOrderRepository';
+import { validateChecklistSavePayload } from '@/utils/validation';
 import { v4 as uuidv4 } from 'uuid';
 import { base64ToUint8Array, readImageAsUint8Array } from './imageService';
 
@@ -95,7 +96,7 @@ export function buildChecklistPayload({
   signature,
 }: BuildChecklistPayloadInput): ChecklistSavePayload {
   return executeWithLayerException(() => {
-    return {
+    return validateChecklistSavePayload({
       stage,
       workOrder,
       workOrderUpdate: stage === 'collection'
@@ -119,7 +120,7 @@ export function buildChecklistPayload({
         photoInUri: stage === 'collection' ? item.photoInUri : null,
         photoOutUri: stage === 'delivery' ? item.photoOutUri : null,
       })),
-    };
+    });
   }, ChecklistServiceException);
 }
 
@@ -134,7 +135,9 @@ export async function saveWorkOrderData(
   checklist: ChecklistSavePayload
 ): Promise<void> {
   return executeAsyncWithLayerException(async () => {
-    if (!checklist.workOrderUpdate) {
+    const validatedChecklist = validateChecklistSavePayload(checklist);
+
+    if (!validatedChecklist.workOrderUpdate) {
       return;
     }
 
@@ -142,18 +145,18 @@ export async function saveWorkOrderData(
       signature_in,
       signature_out,
       ...workOrderUpdate
-    } = checklist.workOrderUpdate;
+    } = validatedChecklist.workOrderUpdate;
 
     await workOrderRepository.update({
-      ...checklist.workOrder,
+      ...validatedChecklist.workOrder,
       ...workOrderUpdate,
       status_sync: 0,
       signature_in: signature_in
         ? base64ToUint8Array(signature_in)
-        : checklist.workOrder.signature_in,
+        : validatedChecklist.workOrder.signature_in,
       signature_out: signature_out
         ? base64ToUint8Array(signature_out)
-        : checklist.workOrder.signature_out,
+        : validatedChecklist.workOrder.signature_out,
     });
   }, ChecklistServiceException);
 }
@@ -163,14 +166,15 @@ export async function saveChecklistItems(
   checklist: ChecklistSavePayload
 ): Promise<void> {
   return executeAsyncWithLayerException(async () => {
+    const validatedChecklist = validateChecklistSavePayload(checklist);
     const checklistRows = await checkListRepository.getAll();
     const rowsByItem = new Map(
       checklistRows
-        .filter((row) => row.work_order_fk === checklist.workOrder.operation_code)
+        .filter((row) => row.work_order_fk === validatedChecklist.workOrder.operation_code)
         .map((row) => [row.checklist_item_fk, row])
     );
 
-    for (const item of checklist.items) {
+    for (const item of validatedChecklist.items) {
       const existing = rowsByItem.get(item.checklist_item_fk);
       const resolvedStatus = item.status ?? existing?.status;
 
@@ -188,7 +192,7 @@ export async function saveChecklistItems(
       const nextChecklist: CheckList = {
         id: existing?.id ?? item.checklist_id ?? uuidv4(),
         checklist_item_fk: item.checklist_item_fk,
-        work_order_fk: checklist.workOrder.operation_code,
+        work_order_fk: validatedChecklist.workOrder.operation_code,
         status_sync: 0,
         status: resolvedStatus,
         img_in: resolvedImgIn,

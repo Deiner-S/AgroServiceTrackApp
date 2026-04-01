@@ -79,6 +79,13 @@ describe('authService', () => {
 
       await expect(requestToken({ username: 'user', password: 'pass' })).rejects.toThrow('REQUEST_FAILURE');
     });
+
+    it('rejects username outside the web validation pattern', async () => {
+      await expect(requestToken({ username: 'User 1', password: 'pass' })).rejects.toThrow(
+        'O valor deve conter somente letras minusculas, sem espacos.'
+      );
+      expect(mockHttpRequest).not.toHaveBeenCalled();
+    });
   });
 
   describe('refreshToken', () => {
@@ -86,7 +93,7 @@ describe('authService', () => {
       mockGetTokenStorange.mockResolvedValue({ access: 'old-access', refresh: 'refresh-token' });
       mockHttpRequest.mockResolvedValue({ access: 'new-access' });
 
-      await expect(refreshToken()).resolves.toBeUndefined();
+      await expect(refreshToken()).resolves.toBe('new-access');
 
       expect(mockHttpRequest).toHaveBeenCalledWith({
         method: 'POST',

@@ -1,5 +1,5 @@
 import ErrorLogRepository from '@/repository/ErrorLogRepository';
-import { handleHighLevelError, registerErrorLog } from '@/util/loggingUtil';
+import { handleHighLevelError, registerErrorLog } from '@/utils/loggingUtil';
 
 jest.mock('@/repository/ErrorLogRepository', () => ({
   __esModule: true,

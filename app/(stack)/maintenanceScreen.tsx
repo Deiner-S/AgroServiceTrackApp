@@ -4,6 +4,7 @@ import useMaintenanceHook from "@/hooks/maintenanceHook";
 import WorkOrder from "@/models/WorkOrder";
 import WorkOrderRepository from "@/repository/WorkOrderRepository";
 import { executeControllerTask } from "@/services/controllerErrorService";
+import { sanitizeOnlyLettersNumbersAndSpaces } from "@/utils/validation";
 import { useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -146,7 +147,7 @@ export default function MaintenanceScreen() {
                 placeholder="Descreva o serviÃ§o realizado..."
                 placeholderTextColor="#8e8e93"
                 value={serviceDraft}
-                onChangeText={setServiceDraft}
+                onChangeText={(value) => setServiceDraft(sanitizeOnlyLettersNumbersAndSpaces(value))}
                 multiline
                 numberOfLines={8}
                 textAlignVertical="top"

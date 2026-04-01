@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>21/21</span>
+                <span class='fraction'>20/20</span>
             </div>
         
             
@@ -39,14 +39,14 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>2/2</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>21/21</span>
+                <span class='fraction'>20/20</span>
             </div>
         
             
@@ -136,7 +136,13 @@
 <a name='L71'></a><a href='#L71'>71</a>
 <a name='L72'></a><a href='#L72'>72</a>
 <a name='L73'></a><a href='#L73'>73</a>
-<a name='L74'></a><a href='#L74'>74</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -160,6 +166,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-yes">5x</span>
@@ -176,6 +185,12 @@
 <span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -188,10 +203,9 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">7x</span>
 <span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -206,10 +220,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { clearTokenStorange } from '@/storange/authStorange';
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { executeAsyncWithLayerException } from '@/exceptions/AppLayerException';
+import NetworkServiceException from '@/exceptions/NetworkServiceException';
+import { clearTokenStorange } from '@/storange/authStorange';
 import NetInfo from '@react-native-community/netinfo';
 import { beginRequestLoading, endRequestLoading } from './requestLoadingService';
 import { refreshToken } from './authService';
@@ -233,6 +247,7 @@ export async function httpRequest&lt;T&gt;(
   retried = false,
   controlLoading = true
 ): Promise&lt;T&gt; {
+  return executeAsyncWithLayerException(async () =&gt; {
     try {
       if (controlLoading) {
         beginRequestLoading();
@@ -246,41 +261,44 @@ export async function httpRequest&lt;T&gt;(
 &nbsp;
       if (response.status === 401 &amp;&amp; !retried) {
         try {
-          await refreshToken()
-          return httpRequest&lt;T&gt;(options, true, false)
+          const refreshedAccessToken = await refreshToken()
+          return httpRequest&lt;T&gt;({
+            ...options,
+            headers: {
+              ...options.headers,
+              Authorization: `Bearer ${refreshedAccessToken}`,
+            },
+          }, true, false)
         } catch {
           await clearTokenStorange()
-          throw new Error('SESSION_EXPIRED')
+          throw new NetworkServiceException('SESSION_EXPIRED')
         }
       }
 &nbsp;
       if (!response.ok) {
-          const errorBody = await response.text();
-          throw new Error(`HTTP ${response.status} - ${errorBody || <span class="branch-1 cbranch-no" title="branch not covered" >response.statusText}</span>`);
+        const errorBody = await response.text();
+        throw new NetworkServiceException(`HTTP ${response.status} - ${errorBody || <span class="branch-1 cbranch-no" title="branch not covered" >response.statusText}</span>`);
       }
 &nbsp;
       return response.json() as Promise&lt;T&gt;;
-    } catch (err) {
-      throw err
     } finally {
       if (controlLoading) {
         endRequestLoading();
       }
     }
+  }, NetworkServiceException)
 }
 &nbsp;
 &nbsp;
 &nbsp;
 export async function hasWebAccess(): Promise&lt;boolean&gt; {
-    try {
+    return executeAsyncWithLayerException(async () =&gt; {
       const state = await NetInfo.fetch();
     
       return Boolean(
         state.isConnected &amp;&amp; state.isInternetReachable
       );
-    } catch (err) {
-      throw err
-    }
+    }, NetworkServiceException)
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -289,7 +307,7 @@ export async function hasWebAccess(): Promise&lt;boolean&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-31T18:15:58.019Z
+                at 2026-03-31T23:54:05.904Z
             </div>
         <script src="prettify.js"></script>
         <script>

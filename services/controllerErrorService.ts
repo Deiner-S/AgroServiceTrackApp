@@ -1,4 +1,4 @@
-import { handleHighLevelError } from '@/util/loggingUtil';
+import { handleHighLevelError } from '@/utils/loggingUtil';
 
 type ControllerTaskOptions<T> = {
   fallbackValue?: T;

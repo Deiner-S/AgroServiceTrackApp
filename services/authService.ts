@@ -1,6 +1,7 @@
 import { AuthTokens, getTokenStorange, saveTokenStorange } from "@/storange/authStorange"
 import AuthServiceException from "@/exceptions/AuthServiceException";
 import { executeAsyncWithLayerException } from "@/exceptions/AppLayerException";
+import { validateAuthTokensResponse, validateLoginPayload, validateRefreshTokenResponse } from "@/utils/validation";
 import { httpRequest } from "./networkService"
 
 type login = {
@@ -17,19 +18,23 @@ export async function haveToken(): Promise<boolean> {
 
 export async function requestToken({ username, password }: login) {
   return executeAsyncWithLayerException(async () => {
+    const credentials = validateLoginPayload({ username, password });
+
     const response = await httpRequest<AuthTokens>({
       method: 'POST',
       endpoint: '/api/token/',
       BASE_URL: "https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador",
-      body: { username, password }
+      body: credentials
     })
 
-    if (!response.access && !response.refresh) throw Error("REQUEST_FAILURE")
+    const validatedResponse = validateAuthTokensResponse(response);
 
-    console.log('REQUEST TOKEN:', response.access)
+    if (!validatedResponse.access && !validatedResponse.refresh) throw Error("REQUEST_FAILURE")
+
+    console.log('REQUEST TOKEN:', validatedResponse.access)
     await saveTokenStorange({
-      access: response.access,
-      refresh: response.refresh
+      access: validatedResponse.access,
+      refresh: validatedResponse.refresh
     })
   }, AuthServiceException, (err) => {
     const message = String(err)
@@ -46,7 +51,7 @@ export async function requestToken({ username, password }: login) {
   })
 }
 
-export async function refreshToken(): Promise<void> {
+export async function refreshToken(): Promise<string> {
   return executeAsyncWithLayerException(async () => {
     const tokens = await getTokenStorange()
     if (!tokens?.refresh) throw new Error('NO_REFRESH_TOKEN')
@@ -58,11 +63,15 @@ export async function refreshToken(): Promise<void> {
       body: { refresh: tokens.refresh },
     })
 
-    if (!response.access) throw new Error('REFRESH_FAILED')
+    const validatedResponse = validateRefreshTokenResponse(response)
+
+    if (!validatedResponse.access) throw new Error('REFRESH_FAILED')
 
     await saveTokenStorange({
-      access: response.access,
+      access: validatedResponse.access,
       refresh: tokens.refresh,
     })
+
+    return validatedResponse.access
   }, AuthServiceException)
 }

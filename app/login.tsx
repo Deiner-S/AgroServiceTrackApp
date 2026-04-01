@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/authContext'
+import { sanitizeOnlyLowercaseLetters, validateLoginPayload } from '@/utils/validation'
 import { MaterialIcons } from '@expo/vector-icons'
 import { router } from 'expo-router'
 import { useState } from 'react'
@@ -21,13 +22,15 @@ export default function Login() {
   const { login } = useAuth()
 
   async function handleLogin() {
-    if (!user || !password) {
-      Alert.alert('Login', 'Preencha usuario e senha.')
-      return
-    }
+    try {
+      const credentials = validateLoginPayload({ username: user, password })
 
-    await login(user, password)
-    router.replace('/(stack)/homeScreen')
+      await login(credentials.username, credentials.password)
+      router.replace('/(stack)/homeScreen')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Dados de login inválidos.'
+      Alert.alert('Login', message)
+    }
   }
 
   return (
@@ -37,7 +40,7 @@ export default function Login() {
         placeholder="User"
         placeholderTextColor="#d1d5db"
         value={user}
-        onChangeText={setUser}
+        onChangeText={(value) => setUser(sanitizeOnlyLowercaseLetters(value))}
         autoCapitalize="none"
       />
 

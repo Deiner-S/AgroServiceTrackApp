@@ -15,6 +15,13 @@ class TestModel {
     id: { type: 'TEXT', primary: true },
     name: { type: 'TEXT' },
   };
+  static validate(entity: TestModel) {
+    if (!entity.name.trim()) {
+      throw new Error('name is required');
+    }
+
+    return new TestModel(entity.id, entity.name.trim());
+  }
 
   constructor(
     public id: string,
@@ -60,5 +67,16 @@ describe('BaseRepository', () => {
     const repository = await new TestRepository().init();
 
     await expect(repository.getAll()).rejects.toBeInstanceOf(RepositoryException);
+  });
+
+  it('validates entities before saving', async () => {
+    const db = {
+      runAsync: jest.fn().mockResolvedValue({ changes: 1 }),
+    };
+    mockGetInstance.mockResolvedValue(db);
+    const repository = await new TestRepository().init();
+
+    await expect(repository.save(new TestModel('1', '   '))).rejects.toThrow('name is required');
+    expect(db.runAsync).not.toHaveBeenCalled();
   });
 });

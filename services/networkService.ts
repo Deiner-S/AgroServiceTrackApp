@@ -38,8 +38,14 @@ export async function httpRequest<T>(
 
       if (response.status === 401 && !retried) {
         try {
-          await refreshToken()
-          return httpRequest<T>(options, true, false)
+          const refreshedAccessToken = await refreshToken()
+          return httpRequest<T>({
+            ...options,
+            headers: {
+              ...options.headers,
+              Authorization: `Bearer ${refreshedAccessToken}`,
+            },
+          }, true, false)
         } catch {
           await clearTokenStorange()
           throw new NetworkServiceException('SESSION_EXPIRED')

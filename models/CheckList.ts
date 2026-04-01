@@ -1,4 +1,5 @@
 import {ColumnDefinition} from "@/repository/types"
+import { validateCheckListEntity } from "@/utils/validation";
 
 
 export default class CheckList{
@@ -18,6 +19,10 @@ export default class CheckList{
     img_in: { type: "BLOB" },
     img_out: { type: "BLOB" }
   };
+
+  static validate(entity: CheckList): CheckList {
+    return validateCheckListEntity(entity);
+  }
 
   constructor(
     public id: string,
