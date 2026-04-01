@@ -136,7 +136,7 @@ describe('networkService', () => {
       expect(mockClearTokenStorange).toHaveBeenCalledTimes(1);
     });
 
-    it('throws http error body when response is not ok', async () => {
+    it('retries temporary http errors up to 3 attempts before failing', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         status: 500,
         ok: false,
@@ -152,9 +152,11 @@ describe('networkService', () => {
           body: { id: 1 },
         })
       ).rejects.toThrow('HTTP 500 - server exploded');
+
+      expect(global.fetch).toHaveBeenCalledTimes(3);
     });
 
-    it('rethrows fetch errors', async () => {
+    it('retries network errors up to 3 attempts before failing', async () => {
       const error = new Error('network-down');
       (global.fetch as jest.Mock).mockRejectedValue(error);
 
@@ -165,9 +167,11 @@ describe('networkService', () => {
           BASE_URL: 'https://example.com',
         })
       ).rejects.toThrow('network-down');
+
+      expect(global.fetch).toHaveBeenCalledTimes(3);
     });
 
-    it('throws REQUEST_TIMEOUT when fetch aborts by timeout', async () => {
+    it('retries timeout errors up to 3 attempts before failing', async () => {
       (global.fetch as jest.Mock).mockImplementation((_url, options) => {
         options.signal.dispatchEvent(new Event('abort'));
         const abortError = new Error('aborted');
@@ -183,6 +187,59 @@ describe('networkService', () => {
           timeoutMs: 1,
         })
       ).rejects.toThrow('REQUEST_TIMEOUT');
+
+      expect(global.fetch).toHaveBeenCalledTimes(3);
+    });
+
+    it('retries temporary errors and succeeds on a later attempt', async () => {
+      (global.fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          status: 503,
+          ok: false,
+          text: jest.fn().mockResolvedValue('temporary unavailable'),
+          statusText: 'Service Unavailable',
+        })
+        .mockResolvedValueOnce({
+          status: 429,
+          ok: false,
+          text: jest.fn().mockResolvedValue('too many requests'),
+          statusText: 'Too Many Requests',
+        })
+        .mockResolvedValueOnce({
+          status: 200,
+          ok: true,
+          json: jest.fn().mockResolvedValue({ ok: true }),
+        });
+
+      await expect(
+        httpRequest({
+          method: 'GET',
+          endpoint: '/orders',
+          BASE_URL: 'https://example.com',
+        })
+      ).resolves.toEqual({ ok: true });
+
+      expect(global.fetch).toHaveBeenCalledTimes(3);
+    });
+
+    it('does not retry definitive client errors', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        status: 400,
+        ok: false,
+        text: jest.fn().mockResolvedValue('bad request'),
+        statusText: 'Bad Request',
+      });
+
+      await expect(
+        httpRequest({
+          method: 'POST',
+          endpoint: '/orders',
+          BASE_URL: 'https://example.com',
+          body: { id: 1 },
+        })
+      ).rejects.toThrow('HTTP 400 - bad request');
+
+      expect(global.fetch).toHaveBeenCalledTimes(1);
     });
   });
 

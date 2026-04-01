@@ -8,6 +8,7 @@ import { refreshToken } from './authService';
 
 // definindo valores possíveis para 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH';
+const MAX_REQUEST_ATTEMPTS = 3;
 
 //Empacotador da requisição
 interface RequestOptions {
@@ -23,7 +24,8 @@ interface RequestOptions {
 export async function httpRequest<T>(
   options: RequestOptions,
   retried = false,
-  controlLoading = true
+  controlLoading = true,
+  attempt = 1
 ): Promise<T> {
   return executeAsyncWithLayerException(async () => {
     try {
@@ -53,7 +55,7 @@ export async function httpRequest<T>(
               ...options.headers,
               Authorization: `Bearer ${refreshedAccessToken}`,
             },
-          }, true, false)
+          }, true, false, attempt)
         } catch {
           await clearTokenStorange()
           throw new NetworkServiceException('SESSION_EXPIRED')
@@ -62,13 +64,27 @@ export async function httpRequest<T>(
 
       if (!response.ok) {
         const errorBody = await response.text();
-        throw new NetworkServiceException(`HTTP ${response.status} - ${errorBody || response.statusText}`);
+        const httpError = new NetworkServiceException(`HTTP ${response.status} - ${errorBody || response.statusText}`);
+
+        if (shouldRetryRequest(response.status, attempt)) {
+          return httpRequest<T>(options, retried, false, attempt + 1);
+        }
+
+        throw httpError;
       }
 
       return response.json() as Promise<T>;
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
+        if (shouldRetryRequest('timeout', attempt)) {
+          return httpRequest<T>(options, retried, false, attempt + 1);
+        }
+
         throw new NetworkServiceException('REQUEST_TIMEOUT');
+      }
+
+      if (shouldRetryError(error, attempt)) {
+        return httpRequest<T>(options, retried, false, attempt + 1);
       }
 
       throw error;
@@ -78,6 +94,30 @@ export async function httpRequest<T>(
       }
     }
   }, NetworkServiceException)
+}
+
+function shouldRetryRequest(status: number | 'timeout', attempt: number): boolean {
+  if (attempt >= MAX_REQUEST_ATTEMPTS) {
+    return false;
+  }
+
+  if (status === 'timeout') {
+    return true;
+  }
+
+  return status === 408 || status === 429 || status >= 500;
+}
+
+function shouldRetryError(error: unknown, attempt: number): boolean {
+  if (attempt >= MAX_REQUEST_ATTEMPTS) {
+    return false;
+  }
+
+  if (error instanceof NetworkServiceException) {
+    return false;
+  }
+
+  return error instanceof Error;
 }
 
 
