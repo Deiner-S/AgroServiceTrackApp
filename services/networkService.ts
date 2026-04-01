@@ -15,7 +15,8 @@ interface RequestOptions {
   endpoint: string;
   body?: unknown;
   headers?: Record<string, string>;
-  BASE_URL: String
+  BASE_URL: String;
+  timeoutMs?: number;
 }
 
 
@@ -30,10 +31,17 @@ export async function httpRequest<T>(
         beginRequestLoading();
       }
 
+      const controller = new AbortController();
+      const timeoutMs = options.timeoutMs ?? 15000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
       const response = await fetch(`${options.BASE_URL}${options.endpoint}`, {
         method: options.method,
         headers: {'Content-Type': 'application/json',...options.headers},
         body: options.body ? JSON.stringify(options.body) : undefined,
+        signal: controller.signal,
+      }).finally(() => {
+        clearTimeout(timeoutId);
       });
 
       if (response.status === 401 && !retried) {
@@ -58,6 +66,12 @@ export async function httpRequest<T>(
       }
 
       return response.json() as Promise<T>;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new NetworkServiceException('REQUEST_TIMEOUT');
+      }
+
+      throw error;
     } finally {
       if (controlLoading) {
         endRequestLoading();

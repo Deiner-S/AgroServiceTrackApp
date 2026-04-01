@@ -1,4 +1,5 @@
 import { ColumnDefinition } from "@/repository/types";
+import { validateErrorLogEntity } from "@/utils/validation";
 
 export default class ErrorLog {
   static get table(): string {
@@ -15,7 +16,12 @@ export default class ErrorLog {
     erro: { type: "TEXT", notNull: true },
     stacktrace: { type: "TEXT" },
     horario: { type: "TEXT", notNull: true },
+    status_sync: { type: "INTEGER", notNull: true, default: 0 },
   };
+
+  static validate(entity: ErrorLog): ErrorLog {
+    return validateErrorLogEntity(entity);
+  }
 
   constructor(
     public id: string,
@@ -25,5 +31,6 @@ export default class ErrorLog {
     public erro: string,
     public stacktrace: string | null,
     public horario: string,
+    public status_sync: number,
   ) {}
 }

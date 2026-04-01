@@ -59,6 +59,7 @@ describe('loggingUtil', () => {
         user: 'deiner',
         erro: 'request failed',
         stacktrace: error.stack,
+        status_sync: 0,
       })
     );
   });

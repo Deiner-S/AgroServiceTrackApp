@@ -1,5 +1,6 @@
 import type CheckList from '@/models/CheckList';
 import type CheckListItem from '@/models/CheckListItem';
+import type ErrorLog from '@/models/ErrorLog';
 import type WorkOrder from '@/models/WorkOrder';
 import {
   CHECKLIST_ALLOWED_KEYS,
@@ -20,6 +21,7 @@ import {
 import {
   validateCheckListEntity,
   validateCheckListItemEntity,
+  validateErrorLogEntity,
   validateWorkOrderEntity,
 } from '@/utils/validation/entityValidation';
 import { validateChecklistStatus, validateWorkOrderStatus } from '@/utils/validation/statusValidation';
@@ -129,4 +131,19 @@ export function validateWorkOrderApiResponse(payload: unknown): WorkOrder[] {
 export function validateCheckListItemApiResponse(payload: unknown): CheckListItem[] {
   assertCondition(Array.isArray(payload), 'A resposta de itens de checklist deve ser uma lista.');
   return payload.map((entry) => validateCheckListItemEntity(entry as CheckListItem));
+}
+
+export function buildErrorLogApiPayload(errorLog: ErrorLog): JsonRecord {
+  const validated = validateErrorLogEntity(errorLog);
+
+  return {
+    id: validateUuid(validated.id, 'id'),
+    osVersion: validateString(validated.osVersion, 'osVersion').trim(),
+    deviceModel: validateString(validated.deviceModel, 'deviceModel').trim(),
+    user: validateString(validated.user, 'user').trim(),
+    erro: validateString(validated.erro, 'erro').trim(),
+    stacktrace: validated.stacktrace,
+    horario: validateIsoDatetime(validated.horario, 'horario'),
+    status_sync: validated.status_sync,
+  };
 }

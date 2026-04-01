@@ -3,6 +3,7 @@ import CheckListItem from '@/models/CheckListItem';
 import WorkOrder from '@/models/WorkOrder';
 import CheckListItemRepository from '@/repository/CheckListItemRepository';
 import CheckListRepository from '@/repository/CheckListRepository';
+import ErrorLogRepository from '@/repository/ErrorLogRepository';
 import WorkOrderRepository from '@/repository/WorkOrderRepository';
 import { hasWebAccess, httpRequest } from '@/services/networkService';
 import { getTokenStorange } from '@/storange/authStorange';
@@ -38,12 +39,20 @@ jest.mock('@/repository/CheckListItemRepository', () => ({
   },
 }));
 
+jest.mock('@/repository/ErrorLogRepository', () => ({
+  __esModule: true,
+  default: {
+    build: jest.fn(),
+  },
+}));
+
 const mockHasWebAccess = hasWebAccess as jest.MockedFunction<typeof hasWebAccess>;
 const mockHttpRequest = httpRequest as jest.MockedFunction<typeof httpRequest>;
 const mockGetTokenStorange = getTokenStorange as jest.MockedFunction<typeof getTokenStorange>;
 const mockWorkOrderBuild = WorkOrderRepository.build as jest.Mock;
 const mockCheckListBuild = CheckListRepository.build as jest.Mock;
 const mockCheckListItemBuild = CheckListItemRepository.build as jest.Mock;
+const mockErrorLogBuild = ErrorLogRepository.build as jest.Mock;
 
 describe('synchronizerService', () => {
   const makeWorkOrder = (statusSync = 0) =>
@@ -70,6 +79,16 @@ describe('synchronizerService', () => {
       '1',
       statusSync
     );
+  const makeErrorLog = (statusSync = 0) => ({
+    id: '550e8400-e29b-41d4-a716-446655449999',
+    osVersion: '35',
+    deviceModel: 'Pixel 9',
+    user: 'deiner',
+    erro: 'request failed',
+    stacktrace: 'stack',
+    horario: '2026-03-31T12:00:00.000Z',
+    status_sync: statusSync,
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -111,15 +130,21 @@ describe('synchronizerService', () => {
       getAll: jest.fn().mockResolvedValue([makeCheckList(0)]),
       update: jest.fn(),
     };
+    const errorLogRepo = {
+      getAll: jest.fn().mockResolvedValue([makeErrorLog(0)]),
+      update: jest.fn(),
+    };
 
     mockHasWebAccess.mockResolvedValue(true);
     mockGetTokenStorange.mockResolvedValue({ access: 'access-token', refresh: 'refresh-token' });
     mockWorkOrderBuild.mockResolvedValue(workOrderRepo);
     mockCheckListItemBuild.mockResolvedValue(checkListItemRepo);
     mockCheckListBuild.mockResolvedValue(checkListRepo);
+    mockErrorLogBuild.mockResolvedValue(errorLogRepo);
     mockHttpRequest
       .mockResolvedValueOnce([makeWorkOrder(0)] as never)
       .mockResolvedValueOnce([makeCheckListItem()] as never)
+      .mockResolvedValueOnce({ ok: true } as never)
       .mockResolvedValueOnce({ ok: true } as never)
       .mockResolvedValueOnce({ ok: true } as never);
 
@@ -127,12 +152,13 @@ describe('synchronizerService', () => {
 
     await expect(instance.run()).resolves.toBeUndefined();
 
-    expect(mockHttpRequest).toHaveBeenCalledTimes(4);
+    expect(mockHttpRequest).toHaveBeenCalledTimes(5);
     expect(workOrderRepo.save).toHaveBeenCalledTimes(1);
     expect(checkListItemRepo.deleteAll).toHaveBeenCalledTimes(1);
     expect(checkListItemRepo.save).toHaveBeenCalledTimes(1);
     expect(workOrderRepo.update).toHaveBeenCalledTimes(1);
     expect(checkListRepo.update).toHaveBeenCalledTimes(1);
+    expect(errorLogRepo.update).toHaveBeenCalledTimes(1);
   });
 
   it('run rethrows SESSION_EXPIRED to allow redirect to login', async () => {
@@ -222,6 +248,7 @@ describe('synchronizerService', () => {
       method: 'POST',
       endpoint: '/receive_work_orders_api/',
       BASE_URL: 'https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador',
+      timeoutMs: 20000,
       body: [
         {
           operation_code: 'OP-1',
@@ -232,6 +259,9 @@ describe('synchronizerService', () => {
           date_out: '2026-03-31T13:00:00.000Z',
           status: '4',
           service: 'Troca filtro',
+          signature_in: undefined,
+          signature_out: undefined,
+          signature: undefined,
         },
       ],
       headers: { Authorization: 'Bearer access-token' },
@@ -275,6 +305,7 @@ describe('synchronizerService', () => {
       method: 'POST',
       endpoint: '/receive_checklist_api/',
       BASE_URL: 'https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador',
+      timeoutMs: 20000,
       body: [
         {
           id: '550e8400-e29b-41d4-a716-446655440000',
@@ -289,5 +320,43 @@ describe('synchronizerService', () => {
     });
     expect(checkListRepo.update).toHaveBeenCalledTimes(1);
     expect(pendingCheckList.status_sync).toBe(1);
+  });
+
+  it('sendErrorLogs sends pending mobile logs and updates them on success', async () => {
+    const pendingLog = makeErrorLog(0);
+    const syncedLog = makeErrorLog(1);
+    const errorLogRepo = {
+      getAll: jest.fn().mockResolvedValue([pendingLog, syncedLog]),
+      update: jest.fn(),
+    };
+    mockErrorLogBuild.mockResolvedValue(errorLogRepo);
+    mockHttpRequest.mockResolvedValue({ ok: true } as never);
+
+    const instance = await Synchronizer.build();
+    (instance as any).authToken = 'access-token';
+
+    await expect((instance as any).sendErrorLogs('/receive_mobile_logs_api/')).resolves.toBeUndefined();
+
+    expect(mockHttpRequest).toHaveBeenCalledWith({
+      method: 'POST',
+      endpoint: '/receive_mobile_logs_api/',
+      BASE_URL: 'https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador',
+      timeoutMs: 20000,
+      body: [
+        {
+          id: '550e8400-e29b-41d4-a716-446655449999',
+          osVersion: '35',
+          deviceModel: 'Pixel 9',
+          user: 'deiner',
+          erro: 'request failed',
+          stacktrace: 'stack',
+          horario: '2026-03-31T12:00:00.000Z',
+          status_sync: 0,
+        },
+      ],
+      headers: { Authorization: 'Bearer access-token' },
+    });
+    expect(errorLogRepo.update).toHaveBeenCalledTimes(1);
+    expect(pendingLog.status_sync).toBe(1);
   });
 });

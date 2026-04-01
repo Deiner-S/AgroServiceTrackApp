@@ -47,6 +47,7 @@ describe('authService', () => {
         method: 'POST',
         endpoint: '/api/token/',
         BASE_URL: 'https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador',
+        timeoutMs: 15000,
         body: { username: 'user', password: 'pass' },
       });
       expect(mockSaveTokenStorange).toHaveBeenCalledWith({
@@ -99,6 +100,7 @@ describe('authService', () => {
         method: 'POST',
         endpoint: '/api/token/refresh/',
         BASE_URL: 'https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador',
+        timeoutMs: 15000,
         body: { refresh: 'refresh-token' },
       });
       expect(mockSaveTokenStorange).toHaveBeenCalledWith({

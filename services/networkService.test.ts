@@ -112,6 +112,7 @@ describe('networkService', () => {
           Authorization: 'Bearer new-access-token',
         },
         body: undefined,
+        signal: expect.any(Object),
       });
     });
 
@@ -164,6 +165,24 @@ describe('networkService', () => {
           BASE_URL: 'https://example.com',
         })
       ).rejects.toThrow('network-down');
+    });
+
+    it('throws REQUEST_TIMEOUT when fetch aborts by timeout', async () => {
+      (global.fetch as jest.Mock).mockImplementation((_url, options) => {
+        options.signal.dispatchEvent(new Event('abort'));
+        const abortError = new Error('aborted');
+        abortError.name = 'AbortError';
+        return Promise.reject(abortError);
+      });
+
+      await expect(
+        httpRequest({
+          method: 'GET',
+          endpoint: '/orders',
+          BASE_URL: 'https://example.com',
+          timeoutMs: 1,
+        })
+      ).rejects.toThrow('REQUEST_TIMEOUT');
     });
   });
 

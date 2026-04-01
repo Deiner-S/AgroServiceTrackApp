@@ -4,12 +4,14 @@ import { executeAsyncWithLayerException } from "@/exceptions/AppLayerException";
 import SynchronizerServiceException from "@/exceptions/SynchronizerServiceException";
 import CheckListItemRepository from "@/repository/CheckListItemRepository";
 import CheckListRepository from '@/repository/CheckListRepository';
+import ErrorLogRepository from "@/repository/ErrorLogRepository";
 import WorkOrderRepository from "@/repository/WorkOrderRepository";
 import { hasWebAccess, httpRequest } from "@/services/networkService";
 import {getTokenStorange } from "@/storange/authStorange";
 import { getErrorMessage } from "@/exceptions/AppLayerException";
 import {
     buildChecklistApiPayload,
+    buildErrorLogApiPayload,
     buildWorkOrderApiPayload,
     validateCheckListItemApiResponse,
     validateChecklistApiEntries,
@@ -57,6 +59,8 @@ export default class Synchronizer{
             await this.sendWorkOrders("/receive_work_orders_api/")
             console.log("sinc4")
             await this.sendCheckListsFilleds("/receive_checklist_api/")
+            console.log("sinc5")
+            await this.sendErrorLogs("/receive_mobile_logs_api/")
             
         }, SynchronizerServiceException, (err) => {
             console.log(`log Error: ${err}`)
@@ -74,6 +78,7 @@ export default class Synchronizer{
                 method: 'GET',
                 endpoint: endPoint,
                 BASE_URL: this.baseUrl,
+                timeoutMs: 20000,
                 headers: {Authorization: `Bearer ${this.authToken}`,}
             })
             const validatedWorkOrders = validateWorkOrderApiResponse(workOrders)
@@ -96,6 +101,7 @@ export default class Synchronizer{
                 method: 'GET',
                 endpoint: endPoint,
                 BASE_URL: this.baseUrl,
+                timeoutMs: 20000,
                 headers: {Authorization: `Bearer ${this.authToken}`,}
             })
             const validatedChecklistItems = validateCheckListItemApiResponse(checklistItemList)
@@ -124,6 +130,7 @@ export default class Synchronizer{
                     method: 'POST',
                     endpoint: endPoint,
                     BASE_URL: this.baseUrl,
+                    timeoutMs: 20000,
                     body: validatedWorkOrders,
                     headers: {Authorization: `Bearer ${this.authToken}`,}
                 })
@@ -155,6 +162,7 @@ export default class Synchronizer{
                         method: 'POST',
                         endpoint: endPoint,
                         BASE_URL: this.baseUrl,
+                        timeoutMs: 20000,
                         body: validatedChecklists,
                         headers: {Authorization: `Bearer ${this.authToken}`,}
                 })
@@ -164,6 +172,38 @@ export default class Synchronizer{
                     for(const checkList of checkListsFiltered){
                         checkList.status_sync = 1
                         await checkListRepository.update(checkList)
+                    }
+                }else{
+                    console.log(`throw Error: Failed to connect to endpoint:${endPoint}`)
+                }
+            }
+        }, SynchronizerServiceException)
+    }
+
+    private async sendErrorLogs(endPoint:string){
+        return executeAsyncWithLayerException(async () => {
+            const errorLogRepository = await ErrorLogRepository.build()
+            const errorLogs = await errorLogRepository.getAll()
+            const errorLogsFiltered = errorLogs.filter(item => item.status_sync !== 1)
+            const validatedLogs = errorLogsFiltered.map((item) => buildErrorLogApiPayload(item))
+
+            if (validatedLogs.length === 0){
+                console.log(`throw Error: empyt list:${endPoint}`)
+            }else{
+                const response = await httpRequest<{ ok: boolean }>({
+                        method: 'POST',
+                        endpoint: endPoint,
+                        BASE_URL: this.baseUrl,
+                        timeoutMs: 20000,
+                        body: validatedLogs,
+                        headers: {Authorization: `Bearer ${this.authToken}`,}
+                })
+                const validatedResponse = validateOkResponse(response)
+
+                if(validatedResponse.ok){
+                    for(const errorLog of errorLogsFiltered){
+                        errorLog.status_sync = 1
+                        await errorLogRepository.update(errorLog)
                     }
                 }else{
                     console.log(`throw Error: Failed to connect to endpoint:${endPoint}`)

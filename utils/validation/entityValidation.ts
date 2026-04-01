@@ -1,5 +1,6 @@
 import type CheckList from '@/models/CheckList';
 import type CheckListItem from '@/models/CheckListItem';
+import type ErrorLog from '@/models/ErrorLog';
 import type WorkOrder from '@/models/WorkOrder';
 import { assertCondition, validateBlob, validateIsoDatetime, validateString, validateUuid } from '@/utils/validation/helpers';
 import { validateChecklistStatus } from '@/utils/validation/statusValidation';
@@ -59,4 +60,25 @@ export function validateCheckListItemEntity(entity: CheckListItem): CheckListIte
 
   assertCondition(Number.isInteger(validated.status), 'status deve ser um numero inteiro.');
   return validated as CheckListItem;
+}
+
+export function validateErrorLogEntity(entity: ErrorLog): ErrorLog {
+  const validated = {
+    ...entity,
+    id: validateUuid(entity.id, 'id'),
+    osVersion: validateString(entity.osVersion, 'osVersion').trim(),
+    deviceModel: validateString(entity.deviceModel, 'deviceModel').trim(),
+    user: validateString(entity.user, 'user').trim(),
+    erro: validateString(entity.erro, 'erro').trim(),
+    stacktrace: entity.stacktrace == null ? null : validateString(entity.stacktrace, 'stacktrace'),
+    horario: validateIsoDatetime(entity.horario, 'horario'),
+    status_sync: Number(entity.status_sync),
+  };
+
+  assertCondition(
+    Number.isInteger(validated.status_sync) && (validated.status_sync === 0 || validated.status_sync === 1),
+    'status_sync deve ser 0 ou 1.'
+  );
+
+  return validated as ErrorLog;
 }

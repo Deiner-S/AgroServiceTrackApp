@@ -50,6 +50,7 @@ export async function registerErrorLog({ error, user = 'unknown' }: ErrorLogInpu
       erro: getErrorMessage(error),
       stacktrace: resolveStackTrace(error),
       horario: new Date().toISOString(),
+      status_sync: 0,
     };
 
     await repository.save(errorLog);
