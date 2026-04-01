@@ -27,7 +27,7 @@ export default class ExceptionMiddleware extends React.Component<
   }
 
   componentDidMount(): void {
-    const errorUtils = globalThis.ErrorUtils as GlobalErrorUtils | undefined;
+    const errorUtils = (globalThis as typeof globalThis & { ErrorUtils?: GlobalErrorUtils }).ErrorUtils;
 
     if (!errorUtils?.setGlobalHandler) {
       return;

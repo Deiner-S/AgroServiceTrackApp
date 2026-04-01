@@ -53,7 +53,7 @@ export default function HeaderOS({
           style={styles.input}
           placeholder="Horimetro"
           placeholderTextColor="#8e8e93"
-          value={orimento}
+          value={String(orimento ?? '')}
           onChangeText={(value) => setOrimento(sanitizeOnlyNumbers(value))}
           keyboardType="numeric"
         />

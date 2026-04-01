@@ -4,5 +4,6 @@ export * from '@/utils/validation/checklistValidation';
 export * from '@/utils/validation/constants';
 export * from '@/utils/validation/entityValidation';
 export * from '@/utils/validation/helpers';
+export * from '@/utils/validation/managementValidation';
 export * from '@/utils/validation/statusValidation';
 export * from '@/utils/validation/textValidation';

@@ -5,11 +5,7 @@ import { Redirect, Stack } from 'expo-router'
 import { ActivityIndicator, TouchableOpacity, View } from 'react-native'
 import { Routes } from '../routes'
 
-
-
 export default function StackLayout() {
-  console.log('StackLayout Renderizou')
-
   const { loged, loading } = useAuth()
   const { runSync } = useSync()
 
@@ -27,20 +23,27 @@ export default function StackLayout() {
 
   return (
     <Stack>
+      <Stack.Screen name={Routes.HOME} options={{ headerShown: false }} />
+      <Stack.Screen name={Routes.ORDERS} options={{ headerShown: false }} />
+      <Stack.Screen name={Routes.CLIENTS} options={{ headerShown: false }} />
+      <Stack.Screen name={Routes.CLIENT_DETAIL} options={{ headerShown: false }} />
+      <Stack.Screen name={Routes.EMPLOYEES} options={{ headerShown: false }} />
+      <Stack.Screen name={Routes.EMPLOYEE_DETAIL} options={{ headerShown: false }} />
+      <Stack.Screen name={Routes.CHECKLIST_ITEMS} options={{ headerShown: false }} />
+      <Stack.Screen name={Routes.CHECKLIST_ITEM_DETAIL} options={{ headerShown: false }} />
       <Stack.Screen
-        name={Routes.HOME}
+        name={Routes.CHECKLIST}
         options={{
-          title:"Home",
-          headerRight: () => (            
+          title: 'Check list',
+          headerRight: () => (
             <TouchableOpacity onPress={runSync}>
               <MaterialIcons name="sync" size={24} color="#000" />
-            </TouchableOpacity>            
+            </TouchableOpacity>
           ),
         }}
       />
-      <Stack.Screen name={Routes.CHECKLIST} options={{title:"Check list"}}/>
-      <Stack.Screen name={Routes.DELIVERY_CHECKLIST} options={{ title: "Checklist de entrega" }} />
-      <Stack.Screen name={Routes.MAINTENANCE} options={{ title: "Manutenção" }} />
+      <Stack.Screen name={Routes.DELIVERY_CHECKLIST} options={{ title: 'Checklist de entrega' }} />
+      <Stack.Screen name={Routes.MAINTENANCE} options={{ title: 'Manutenção' }} />
     </Stack>
   )
 }

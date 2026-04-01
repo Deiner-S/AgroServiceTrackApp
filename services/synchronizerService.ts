@@ -9,6 +9,7 @@ import WorkOrderRepository from "@/repository/WorkOrderRepository";
 import { hasWebAccess, httpRequest } from "@/services/networkService";
 import {getTokenStorange } from "@/storange/authStorange";
 import { getErrorMessage } from "@/exceptions/AppLayerException";
+import { APP_API_BASE_URL, SYNC_REQUEST_TIMEOUT_MS } from "@/services/apiConfig";
 import {
     buildChecklistApiPayload,
     buildErrorLogApiPayload,
@@ -31,7 +32,7 @@ export default class Synchronizer{
     private authToken: string
     
     private constructor() {
-        this.baseUrl = "https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador"
+        this.baseUrl = APP_API_BASE_URL
         this.authToken = ""
     }
 
@@ -78,7 +79,7 @@ export default class Synchronizer{
                 method: 'GET',
                 endpoint: endPoint,
                 BASE_URL: this.baseUrl,
-                timeoutMs: 20000,
+                timeoutMs: SYNC_REQUEST_TIMEOUT_MS,
                 headers: {Authorization: `Bearer ${this.authToken}`,}
             })
             const validatedWorkOrders = validateWorkOrderApiResponse(workOrders)
@@ -101,7 +102,7 @@ export default class Synchronizer{
                 method: 'GET',
                 endpoint: endPoint,
                 BASE_URL: this.baseUrl,
-                timeoutMs: 20000,
+                timeoutMs: SYNC_REQUEST_TIMEOUT_MS,
                 headers: {Authorization: `Bearer ${this.authToken}`,}
             })
             const validatedChecklistItems = validateCheckListItemApiResponse(checklistItemList)
@@ -130,7 +131,7 @@ export default class Synchronizer{
                     method: 'POST',
                     endpoint: endPoint,
                     BASE_URL: this.baseUrl,
-                    timeoutMs: 20000,
+                    timeoutMs: SYNC_REQUEST_TIMEOUT_MS,
                     body: validatedWorkOrders,
                     headers: {Authorization: `Bearer ${this.authToken}`,}
                 })
@@ -162,7 +163,7 @@ export default class Synchronizer{
                         method: 'POST',
                         endpoint: endPoint,
                         BASE_URL: this.baseUrl,
-                        timeoutMs: 20000,
+                        timeoutMs: SYNC_REQUEST_TIMEOUT_MS,
                         body: validatedChecklists,
                         headers: {Authorization: `Bearer ${this.authToken}`,}
                 })
@@ -194,7 +195,7 @@ export default class Synchronizer{
                         method: 'POST',
                         endpoint: endPoint,
                         BASE_URL: this.baseUrl,
-                        timeoutMs: 20000,
+                        timeoutMs: SYNC_REQUEST_TIMEOUT_MS,
                         body: validatedLogs,
                         headers: {Authorization: `Bearer ${this.authToken}`,}
                 })

@@ -3,6 +3,7 @@ import AuthServiceException from "@/exceptions/AuthServiceException";
 import { executeAsyncWithLayerException } from "@/exceptions/AppLayerException";
 import { validateAuthTokensResponse, validateLoginPayload, validateRefreshTokenResponse } from "@/utils/validation";
 import { httpRequest } from "./networkService"
+import { APP_API_BASE_URL, DEFAULT_REQUEST_TIMEOUT_MS } from "./apiConfig";
 
 type login = {
   username: string,
@@ -23,8 +24,8 @@ export async function requestToken({ username, password }: login) {
     const response = await httpRequest<AuthTokens>({
       method: 'POST',
       endpoint: '/api/token/',
-      BASE_URL: "https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador",
-      timeoutMs: 15000,
+      BASE_URL: APP_API_BASE_URL,
+      timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
       body: credentials
     })
 
@@ -60,8 +61,8 @@ export async function refreshToken(): Promise<string> {
     const response = await httpRequest<{ access: string }>({
       method: 'POST',
       endpoint: '/api/token/refresh/',
-      BASE_URL: 'https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador',
-      timeoutMs: 15000,
+      BASE_URL: APP_API_BASE_URL,
+      timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
       body: { refresh: tokens.refresh },
     })
 
