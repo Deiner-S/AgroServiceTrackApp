@@ -1,6 +1,6 @@
 import { executeControllerTask } from '@/services/core/controllerErrorService';
 import { checklistItemService } from '@/services/checklistItem';
-import type { ChecklistItemDetail } from '@/types/management';
+import type { ChecklistItemDetail } from '@/services/checklistItem';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function useChecklistItemDetail(itemId: string | undefined) {

@@ -1,6 +1,6 @@
 import { clientService } from '@/services/client';
 import { executeControllerTask } from '@/services/core/controllerErrorService';
-import type { ClientAddressPayload, ClientDetail } from '@/types/management';
+import type { ClientAddressPayload, ClientDetail } from '@/services/client';
 import {
   BRAZILIAN_STATE_OPTIONS,
   formatZipCodeInput,

@@ -1,5 +1,5 @@
 import { rethrowAsValidationException } from '@/exceptions/ValidationException';
-import type { ChecklistItemCreatePayload } from '@/types/management';
+import type { ChecklistItemCreatePayload } from '@/services/checklistItem';
 import { assertCondition, validateString } from '@/utils/validation/helpers';
 
 function validateRequiredText(value: unknown, fieldName: string): string {

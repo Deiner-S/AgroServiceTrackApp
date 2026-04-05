@@ -2,9 +2,12 @@ import { rethrowAsValidationException } from "@/exceptions/ValidationException";
 import WorkOrder from "@/models/WorkOrder";
 import WorkOrderRepository from "@/repository/WorkOrderRepository";
 import { sanitizeOnlyLettersNumbersAndSpaces, validateServiceText } from "@/utils/validation";
+import { useRoute } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 
-export default function useChecklistMaintenance(workOrderParam: WorkOrder | null) {
+export default function useChecklistMaintenance() {
+  const route = useRoute();
+  const { workOrder: workOrderParam } = (route.params ?? {}) as { workOrder?: WorkOrder };
   const [workOrder, setWorkOrder] = useState<WorkOrder | null>(workOrderParam ?? null);
   const [service, setService] = useState(workOrderParam?.service ?? "");
   const [saving, setSaving] = useState(false);
@@ -111,6 +114,7 @@ export default function useChecklistMaintenance(workOrderParam: WorkOrder | null
   }
 
   return {
+    workOrderParam,
     displayOrder,
     service,
     saving,

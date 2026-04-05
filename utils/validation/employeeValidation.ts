@@ -1,5 +1,9 @@
 import { rethrowAsValidationException } from '@/exceptions/ValidationException';
-import type { EmployeeAddressPayload, EmployeePositionOption, EmployeeUpdatePayload } from '@/types/management';
+import type {
+  EmployeeAddressPayload,
+  EmployeePositionOption,
+  EmployeeUpdatePayload,
+} from '@/services/employee';
 import {
   validateAddressCityField,
   validateAddressComplementField,

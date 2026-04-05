@@ -2,9 +2,6 @@ import AppShell from "@/components/appShell/AppShell";
 import HeaderOSReadOnly from "@/components/checklistComponents/HeaderOSReadOnly";
 import { useSync } from "@/contexts/syncContext";
 import { useChecklistMaintenance } from "@/hooks/useChecklistFlow";
-import WorkOrder from "@/models/WorkOrder";
-import { executeControllerTask } from "@/services/core/controllerErrorService";
-import { useRoute } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import React from "react";
 import {
@@ -20,11 +17,10 @@ import {
 import { Routes } from "../../routes";
 
 export default function ChecklistMaintenanceScreen() {
-  const route = useRoute();
   const navigation = useNavigation<any>();
   const { runSync } = useSync();
-  const { workOrder: workOrderParam } = (route.params ?? {}) as { workOrder: WorkOrder };
   const {
+    workOrderParam,
     displayOrder,
     service,
     saving,
@@ -36,21 +32,17 @@ export default function ChecklistMaintenanceScreen() {
     closeServiceEditor,
     updateServiceDraft,
     applyServiceEditor,
-  } = useChecklistMaintenance(workOrderParam ?? null);
+  } = useChecklistMaintenance();
 
   async function handleSave() {
-    await executeControllerTask(async () => {
-      const saved = await saveService();
+    const saved = await saveService();
 
-      if (!saved) {
-        return;
-      }
+    if (!saved) {
+      return;
+    }
 
-      await runSync();
-      navigation.navigate(Routes.HOME);
-    }, {
-      operation: "salvar servico",
-    });
+    await runSync();
+    navigation.navigate(Routes.HOME);
   }
 
   if (!workOrderParam) {

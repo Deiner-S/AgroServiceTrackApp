@@ -1,5 +1,5 @@
 import { clientService } from '@/services/client';
-import type { ClientDetail } from '@/types/management';
+import type { ClientDetail } from '@/services/client';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function useClientDetail(clientId: string | undefined) {

@@ -1,6 +1,6 @@
 import { executeControllerTask } from '@/services/core/controllerErrorService';
 import { checklistItemService } from '@/services/checklistItem';
-import type { ChecklistItemCreatePayload, ChecklistItemDetail } from '@/types/management';
+import type { ChecklistItemCreatePayload, ChecklistItemDetail } from '@/services/checklistItem';
 import { validateChecklistItemNameField } from '@/utils/validation';
 import { useCallback, useState } from 'react';
 

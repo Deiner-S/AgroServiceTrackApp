@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/authContext';
 import { useSync } from '@/contexts/syncContext';
 import { fetchDashboard } from '@/services/management';
-import type { AccessContext, DashboardModule, DashboardPayload } from '@/types/management';
+import type { AccessContext, DashboardModule, DashboardPayload } from '@/services/management';
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 type ManagementAccessContextValue = {

@@ -1,6 +1,6 @@
 import { employeeService } from '@/services/employee';
 import { executeControllerTask } from '@/services/core/controllerErrorService';
-import type { EmployeeDetail } from '@/types/management';
+import type { EmployeeDetail } from '@/services/employee';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function useEmployeeDetail(employeeId: string | undefined) {

@@ -6,7 +6,7 @@ import type {
   EmployeeListItem,
   EmployeePositionOption,
   EmployeeUpdatePayload,
-} from '@/types/management';
+} from '@/services/employee/types';
 import {
   validateEmployeeAddressPayload,
   validateEmployeeDetailResponse,

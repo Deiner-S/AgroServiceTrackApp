@@ -2,24 +2,33 @@ import { rethrowAsValidationException } from '@/exceptions/ValidationException';
 import type {
   AccessContext,
   ChecklistExecutionSummary,
-  ChecklistItemDetail,
-  ChecklistItemDetailPermissions,
-  ChecklistItemListItem,
-  ClientDetail,
-  ClientDetailPermissions,
-  ClientListItem,
   DashboardModule,
   DashboardPayload,
   DashboardSummary,
-  DetailPermissions,
+  OrderDetail,
+  OrderListItem,
+} from '@/services/management';
+import type {
+  ChecklistItemDetail,
+  ChecklistItemDetailPermissions,
+  ChecklistItemListItem,
+} from '@/services/checklistItem';
+import type {
+  ClientDetail,
+  ClientDetailPermissions,
+  ClientListItem,
+  RelatedOrderSummary,
+} from '@/services/client';
+import type {
   EmployeeDetail,
   EmployeeDetailPermissions,
   EmployeeListItem,
   EmployeePositionOption,
-  OrderDetail,
-  OrderListItem,
-  RelatedOrderSummary,
-} from '@/types/management';
+} from '@/services/employee';
+
+type DetailPermissions = {
+  canToggleStatus: boolean;
+};
 import {
   JsonRecord,
   assertCondition,

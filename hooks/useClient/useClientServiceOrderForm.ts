@@ -1,6 +1,6 @@
 import { clientService } from '@/services/client';
 import { executeControllerTask } from '@/services/core/controllerErrorService';
-import type { ClientDetail, ClientServiceOrderPayload } from '@/types/management';
+import type { ClientDetail, ClientServiceOrderPayload } from '@/services/client';
 import {
   validateServiceOperationCodeField,
   validateServiceSymptomsField,

@@ -4,7 +4,7 @@ import type {
   EmployeeDetail,
   EmployeePositionOption,
   EmployeeUpdatePayload,
-} from '@/types/management';
+} from '@/services/employee';
 import {
   formatCpfInput,
   formatPhoneInput,

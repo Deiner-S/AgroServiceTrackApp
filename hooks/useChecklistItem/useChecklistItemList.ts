@@ -1,5 +1,5 @@
 import { checklistItemService } from '@/services/checklistItem';
-import type { ChecklistItemListItem } from '@/types/management';
+import type { ChecklistItemListItem } from '@/services/checklistItem';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function useChecklistItemList() {

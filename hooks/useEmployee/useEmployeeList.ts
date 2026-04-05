@@ -1,5 +1,5 @@
 import { employeeService } from '@/services/employee';
-import type { EmployeeListItem } from '@/types/management';
+import type { EmployeeListItem } from '@/services/employee';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function useEmployeeList() {

@@ -2,8 +2,7 @@ import AppShell from "@/components/appShell/AppShell";
 import ChecklistBox from "@/components/checklistComponents/checkListBox";
 import Signature from "@/components/checklistComponents/signature";
 import { useSync } from "@/contexts/syncContext";
-import { useChecklistFlowData, useChecklistFlowForm } from "@/hooks/useChecklistFlow";
-import { executeControllerTask } from "@/services/core/controllerErrorService";
+import { useChecklistCollection } from "@/hooks/useChecklistFlow";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useNavigation } from "expo-router";
@@ -15,36 +14,30 @@ import {
 } from "@/utils/validation";
 
 export default function ChecklistCollectionScreen() {
-  const checklistData = useChecklistFlowData();
-  const checklistForm = useChecklistFlowForm(checklistData.displayOrder);
+  const checklist = useChecklistCollection();
   const navigation = useNavigation<any>();
   const { runSync } = useSync();
-  const hasSignature = !!checklistForm.signature;
 
   async function handleSave() {
-    if (!checklistForm.validateBeforeSave("collection", checklistData.checklistState)) {
+    const saved = await checklist.saveChecklist();
+
+    if (!saved) {
       return;
     }
 
-    await executeControllerTask(async () => {
-      const checklistPayload = checklistData.buildChecklistPayload("collection", checklistForm);
-      await checklistData.saveData(checklistPayload);
-      await runSync();
-      navigation.navigate(Routes.HOME);
-    }, {
-      operation: "salvar checklist",
-    });
+    await runSync();
+    navigation.navigate(Routes.HOME);
   }
 
   return (
     <AppShell
       title="Checklist de coleta"
-      subtitle={`OS ${checklistData.workOrder.operation_code} - ${checklistData.workOrder.client}`}
+      subtitle={`OS ${checklist.workOrder.operation_code} - ${checklist.workOrder.client}`}
     >
       <View style={styles.content}>
         <View style={styles.infoCard}>
           <Text style={styles.cardTitle}>Problema relatado</Text>
-          <Text style={styles.problemText}>{checklistData.workOrder.symptoms}</Text>
+          <Text style={styles.problemText}>{checklist.workOrder.symptoms}</Text>
         </View>
 
         <View style={styles.formCard}>
@@ -53,59 +46,59 @@ export default function ChecklistCollectionScreen() {
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Chassi</Text>
             <TextInput
-              style={[styles.input, checklistForm.formErrors.chassi && styles.inputError]}
+              style={[styles.input, checklist.formErrors.chassi && styles.inputError]}
               placeholder="Informe o chassi"
               placeholderTextColor="#64748b"
-              value={checklistForm.chassi}
-              onChangeText={(value) => checklistForm.setChassi(sanitizeOnlyLettersAndNumbers(value).toUpperCase())}
+              value={checklist.chassi}
+              onChangeText={(value) => checklist.setChassi(sanitizeOnlyLettersAndNumbers(value).toUpperCase())}
               autoCapitalize="characters"
               maxLength={17}
             />
-            {checklistForm.formErrors.chassi ? <Text style={styles.errorText}>{checklistForm.formErrors.chassi}</Text> : null}
+            {checklist.formErrors.chassi ? <Text style={styles.errorText}>{checklist.formErrors.chassi}</Text> : null}
           </View>
 
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Horimetro</Text>
             <TextInput
-              style={[styles.input, checklistForm.formErrors.horimetro && styles.inputError]}
+              style={[styles.input, checklist.formErrors.horimetro && styles.inputError]}
               placeholder="Informe o horimetro"
               placeholderTextColor="#64748b"
-              value={checklistForm.horimetroInput}
-              onChangeText={checklistForm.setHorimetroInput}
+              value={checklist.horimetroInput}
+              onChangeText={checklist.setHorimetroInput}
               keyboardType="numeric"
             />
-            {checklistForm.formErrors.horimetro ? <Text style={styles.errorText}>{checklistForm.formErrors.horimetro}</Text> : null}
+            {checklist.formErrors.horimetro ? <Text style={styles.errorText}>{checklist.formErrors.horimetro}</Text> : null}
           </View>
 
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Modelo</Text>
             <TextInput
-              style={[styles.input, checklistForm.formErrors.modelo && styles.inputError]}
+              style={[styles.input, checklist.formErrors.modelo && styles.inputError]}
               placeholder="Informe o modelo"
               placeholderTextColor="#64748b"
-              value={checklistForm.modelo}
-              onChangeText={(value) => checklistForm.setModelo(sanitizeOnlyLettersAndNumbers(value))}
+              value={checklist.modelo}
+              onChangeText={(value) => checklist.setModelo(sanitizeOnlyLettersAndNumbers(value))}
             />
-            {checklistForm.formErrors.modelo ? <Text style={styles.errorText}>{checklistForm.formErrors.modelo}</Text> : null}
+            {checklist.formErrors.modelo ? <Text style={styles.errorText}>{checklist.formErrors.modelo}</Text> : null}
           </View>
 
           <View>
             <Text style={styles.label}>Data</Text>
             <Pressable
-              onPress={() => checklistForm.setOpen(true)}
+              onPress={() => checklist.setOpenCalendar(true)}
               style={({ pressed }) => [styles.dateButton, pressed && styles.dateButtonPressed]}
             >
-              <Text style={styles.dateText}>{checklistForm.dateFilled.toLocaleDateString("pt-BR")}</Text>
+              <Text style={styles.dateText}>{checklist.dateFilled.toLocaleDateString("pt-BR")}</Text>
             </Pressable>
           </View>
         </View>
 
-        {checklistForm.openCalendar ? (
+        {checklist.openCalendar ? (
           <DateTimePicker
-            value={checklistForm.dateFilled}
+            value={checklist.dateFilled}
             mode="date"
             display="default"
-            onChange={checklistForm.onChange}
+            onChange={checklist.onChange}
           />
         ) : null}
 
@@ -116,21 +109,18 @@ export default function ChecklistCollectionScreen() {
           </Text>
         </View>
 
-        {checklistData.checklistItems.map((item) => (
+        {checklist.checklistItems.map((item) => (
           <ChecklistBox
             key={item.id}
             checkList={item.name}
-            selected={checklistData.checklistState.find((stateItem) => stateItem.id === item.id)?.selected ?? null}
-            setSelected={(value) => {
-              checklistData.setItemSelected(item.id, value);
-              checklistForm.clearItemError(item.id, value);
-            }}
-            handleTakePhoto={() => checklistData.takePhoto(item.id, "in")}
+            selected={checklist.checklistState.find((stateItem) => stateItem.id === item.id)?.selected ?? null}
+            setSelected={(value) => checklist.setItemSelected(item.id, value)}
+            handleTakePhoto={() => checklist.takePhoto(item.id)}
             photoButtonLabel="Foto"
-            error={checklistForm.formErrors.items[item.id]}
+            error={checklist.formErrors.items[item.id]}
             photoAttached={
-              (checklistData.checklistState.find((stateItem) => stateItem.id === item.id)?.hasPhotoIn ?? false) ||
-              !!checklistData.checklistState.find((stateItem) => stateItem.id === item.id)?.photoInUri
+              (checklist.checklistState.find((stateItem) => stateItem.id === item.id)?.hasPhotoIn ?? false) ||
+              !!checklist.checklistState.find((stateItem) => stateItem.id === item.id)?.photoInUri
             }
           />
         ))}
@@ -138,23 +128,23 @@ export default function ChecklistCollectionScreen() {
         <View style={styles.actionCard}>
           <Text style={styles.actionTitle}>Assinatura</Text>
           <Text style={styles.actionDescription}>
-            {hasSignature
+            {checklist.hasSignature
               ? "Checklist assinado e pronto para envio."
               : "Capture a assinatura antes de concluir o checklist."}
           </Text>
           <Pressable
-            disabled={hasSignature}
+            disabled={checklist.hasSignature}
             style={({ pressed }) => [
               styles.signatureButton,
-              hasSignature && styles.signatureButtonDone,
-              !hasSignature && pressed && styles.signatureButtonPressed,
+              checklist.hasSignature && styles.signatureButtonDone,
+              !checklist.hasSignature && pressed && styles.signatureButtonPressed,
             ]}
             onPress={() => {
-              if (!hasSignature) checklistForm.setOpenSignature(true);
+              if (!checklist.hasSignature) checklist.setOpenSignature(true);
             }}
           >
             <View style={styles.signatureContent}>
-              {hasSignature ? (
+              {checklist.hasSignature ? (
                 <Ionicons
                   name="checkmark-circle"
                   size={22}
@@ -162,16 +152,16 @@ export default function ChecklistCollectionScreen() {
                   style={styles.signatureIcon}
                 />
               ) : null}
-              <Text style={styles.buttonText}>{hasSignature ? "Assinado" : "Assinar"}</Text>
+              <Text style={styles.buttonText}>{checklist.hasSignature ? "Assinado" : "Assinar"}</Text>
             </View>
           </Pressable>
-          {checklistForm.formErrors.signature ? <Text style={styles.errorText}>{checklistForm.formErrors.signature}</Text> : null}
+          {checklist.formErrors.signature ? <Text style={styles.errorText}>{checklist.formErrors.signature}</Text> : null}
         </View>
 
-        <Modal visible={checklistForm.openSignature} animationType="slide">
+        <Modal visible={checklist.openSignature} animationType="slide">
           <Signature
-            setSignature={checklistForm.setSignature}
-            onClose={() => checklistForm.setOpenSignature(false)}
+            setSignature={checklist.setSignature}
+            onClose={() => checklist.setOpenSignature(false)}
           />
         </Modal>
 

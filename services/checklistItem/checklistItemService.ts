@@ -4,7 +4,7 @@ import type {
   ChecklistItemCreatePayload,
   ChecklistItemDetail,
   ChecklistItemListItem,
-} from '@/types/management';
+} from '@/services/checklistItem/types';
 import {
   validateChecklistItemCreatePayload,
   validateChecklistItemDetailResponse,

@@ -2,9 +2,8 @@ import ChecklistBox from '@/components/checklistComponents/checkListBox';
 import HeaderOSReadOnly from '@/components/checklistComponents/HeaderOSReadOnly';
 import Signature from '@/components/checklistComponents/signature';
 import { useSync } from '@/contexts/syncContext';
-import { useChecklistFlowData, useChecklistFlowForm } from '@/hooks/useChecklistFlow';
+import { useChecklistDelivery } from '@/hooks/useChecklistFlow';
 import { Ionicons } from '@expo/vector-icons';
-import { executeControllerTask } from '@/services/core/controllerErrorService';
 import { useNavigation } from 'expo-router';
 import React from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -12,27 +11,21 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Routes } from '../../routes';
 
 export default function ChecklistDeliveryScreen() {
-  const checklistData = useChecklistFlowData();
-  const checklistForm = useChecklistFlowForm(checklistData.displayOrder);
+  const checklist = useChecklistDelivery();
   const navigation = useNavigation<any>();
   const { runSync } = useSync();
   const insets = useSafeAreaInsets();
-  const displayOrder = checklistData.displayOrder;
-  const hasSignature = !!checklistForm.signature;
+  const displayOrder = checklist.displayOrder;
 
   async function handleSave() {
-    if (!checklistForm.validateBeforeSave('delivery', checklistData.checklistState)) {
+    const saved = await checklist.saveChecklist();
+
+    if (!saved) {
       return;
     }
 
-    await executeControllerTask(async () => {
-      const checklistPayload = checklistData.buildChecklistPayload('delivery', checklistForm, displayOrder);
-      await checklistData.saveData(checklistPayload);
-      await runSync();
-      navigation.navigate(Routes.HOME);
-    }, {
-      operation: 'salvar checklist de entrega',
-    });
+    await runSync();
+    navigation.navigate(Routes.HOME);
   }
 
   return (
@@ -51,35 +44,35 @@ export default function ChecklistDeliveryScreen() {
 
         <View style={styles.divider} />
 
-        {checklistData.deliveryChecklistItems.map((item) => (
+        {checklist.deliveryChecklistItems.map((item) => (
           <ChecklistBox
             key={item.id}
             checkList={item.name}
-            selected={checklistData.checklistState.find((i) => i.id === item.id)?.selected ?? null}
+            selected={checklist.checklistState.find((i) => i.id === item.id)?.selected ?? null}
             readOnlyStatus
-            handleTakePhoto={() => checklistData.takePhoto(item.id, 'out')}
+            handleTakePhoto={() => checklist.takePhoto(item.id)}
             photoButtonLabel="Foto"
             photoAttached={
-              (checklistData.checklistState.find((i) => i.id === item.id)?.hasPhotoOut ?? false) ||
-              !!checklistData.checklistState.find((i) => i.id === item.id)?.photoOutUri
+              (checklist.checklistState.find((i) => i.id === item.id)?.hasPhotoOut ?? false) ||
+              !!checklist.checklistState.find((i) => i.id === item.id)?.photoOutUri
             }
           />
         ))}
 
         <View style={styles.signatureWrapper}>
           <Pressable
-            disabled={hasSignature}
+            disabled={checklist.hasSignature}
             style={({ pressed }) => [
               styles.signatureButton,
-              hasSignature && styles.signatureButtonDone,
-              !hasSignature && pressed && styles.signatureButtonPressed,
+              checklist.hasSignature && styles.signatureButtonDone,
+              !checklist.hasSignature && pressed && styles.signatureButtonPressed,
             ]}
             onPress={() => {
-              if (!hasSignature) checklistForm.setOpenSignature(true);
+              if (!checklist.hasSignature) checklist.setOpenSignature(true);
             }}
           >
             <View style={styles.signatureContent}>
-              {hasSignature && (
+              {checklist.hasSignature && (
                 <Ionicons
                   name="checkmark-circle"
                   size={22}
@@ -88,17 +81,17 @@ export default function ChecklistDeliveryScreen() {
                 />
               )}
               <Text style={styles.buttonText}>
-                {hasSignature ? 'Entrega assinada' : 'Assinar entrega'}
+                {checklist.hasSignature ? 'Entrega assinada' : 'Assinar entrega'}
               </Text>
             </View>
           </Pressable>
-          {checklistForm.formErrors.signature ? <Text style={styles.errorText}>{checklistForm.formErrors.signature}</Text> : null}
+          {checklist.formErrors.signature ? <Text style={styles.errorText}>{checklist.formErrors.signature}</Text> : null}
         </View>
 
-        <Modal visible={checklistForm.openSignature} animationType="slide">
+        <Modal visible={checklist.openSignature} animationType="slide">
           <Signature
-            setSignature={checklistForm.setSignature}
-            onClose={() => checklistForm.setOpenSignature(false)}
+            setSignature={checklist.setSignature}
+            onClose={() => checklist.setOpenSignature(false)}
           />
         </Modal>
 

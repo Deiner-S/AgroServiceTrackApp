@@ -3,7 +3,7 @@ import ManagementServiceException from '@/exceptions/ManagementServiceException'
 import { APP_API_BASE_URL, MANAGEMENT_REQUEST_TIMEOUT_MS } from '@/services/core/apiConfig';
 import { httpRequest } from '@/services/core/networkService';
 import { getManagementAuthorizationHeaders } from '@/services/management/managementApiHelpers';
-import type { DashboardPayload } from '@/types/management';
+import type { DashboardPayload } from '@/services/management';
 import { validateDashboardResponse } from '@/utils/validation';
 
 export async function fetchDashboard(): Promise<DashboardPayload> {

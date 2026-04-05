@@ -7,7 +7,7 @@ import type {
   ClientListItem,
   ClientServiceOrderPayload,
   ClientUpdatePayload,
-} from '@/types/management';
+} from '@/services/client/types';
 import {
   validateClientAddressPayload,
   validateClientCreatePayload,

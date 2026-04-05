@@ -1,6 +1,6 @@
 import { employeeService } from '@/services/employee';
 import { executeControllerTask } from '@/services/core/controllerErrorService';
-import type { EmployeeAddressPayload, EmployeeDetail } from '@/types/management';
+import type { EmployeeAddressPayload, EmployeeDetail } from '@/services/employee';
 import {
   BRAZILIAN_STATE_OPTIONS,
   formatZipCodeInput,

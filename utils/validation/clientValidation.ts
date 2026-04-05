@@ -4,7 +4,7 @@ import type {
   ClientCreatePayload,
   ClientServiceOrderPayload,
   ClientUpdatePayload,
-} from '@/types/management';
+} from '@/services/client';
 import { assertCondition, validateOptionalString, validateString } from '@/utils/validation/helpers';
 
 export const BRAZILIAN_STATE_OPTIONS = [

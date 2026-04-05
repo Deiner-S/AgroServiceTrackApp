@@ -1,5 +1,5 @@
 import { clientService } from '@/services/client';
-import type { ClientListItem } from '@/types/management';
+import type { ClientListItem } from '@/services/client';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function useClientList() {
