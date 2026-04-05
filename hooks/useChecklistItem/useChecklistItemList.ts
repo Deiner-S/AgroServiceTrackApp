@@ -1,4 +1,5 @@
 import { checklistItemService } from '@/services/checklistItem';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type { ChecklistItemListItem } from '@/services/checklistItem';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -18,11 +19,16 @@ export default function useChecklistItemList() {
       }
 
       setError(null);
-      const response = await checklistItemService.fetchChecklistItems(query);
+      const response = await exceptionHandling(() => checklistItemService.fetchChecklistItems(query), {
+        operation: 'carregar lista de itens de checklist',
+      });
+
+      if (!response) {
+        setError('Falha ao carregar itens de checklist.');
+        return;
+      }
+
       setItems(response);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Falha ao carregar os dados.';
-      setError(message);
     } finally {
       setLoading(false);
       setRefreshing(false);

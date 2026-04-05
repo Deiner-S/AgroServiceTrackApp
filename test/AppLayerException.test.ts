@@ -1,18 +1,20 @@
-import AppLayerException, {
-  executeAsyncWithLayerException,
-  executeWithLayerException,
-} from '@/exceptions/AppLayerException';
+import ExceptionHandler, {
+  exceptionHandling,
+  syncExceptionHandling,
+} from '@/exceptions/ExceptionHandler';
 import ValidationException from '@/exceptions/ValidationException';
-import { captureErrorSilently } from '@/utils/loggingUtil';
+import { captureErrorSilently, handleHighLevelError } from '@/utils/loggingUtil';
 
 jest.mock('@/utils/loggingUtil', () => ({
   captureErrorSilently: jest.fn().mockResolvedValue(undefined),
+  handleHighLevelError: jest.fn().mockResolvedValue(undefined),
 }));
 
-class SampleLayerException extends AppLayerException {}
+class SampleLayerException extends ExceptionHandler {}
 
-describe('AppLayerException helpers', () => {
+describe('ExceptionHandler helpers', () => {
   const mockCaptureErrorSilently = captureErrorSilently as jest.MockedFunction<typeof captureErrorSilently>;
+  const mockHandleHighLevelError = handleHighLevelError as jest.MockedFunction<typeof handleHighLevelError>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -20,34 +22,36 @@ describe('AppLayerException helpers', () => {
 
   it('wraps sync errors with the provided exception type', () => {
     expect(() =>
-      executeWithLayerException(() => {
+      syncExceptionHandling(() => {
         throw new Error('sync failed');
-      }, SampleLayerException)
+      }, { ExceptionType: SampleLayerException })
     ).toThrow(SampleLayerException);
   });
 
   it('returns sync operation result when no error occurs', () => {
-    const result = executeWithLayerException(() => 10, SampleLayerException);
+    const result = syncExceptionHandling(() => 10, { ExceptionType: SampleLayerException });
 
     expect(result).toBe(10);
   });
 
   it('wraps async errors with the provided exception type', async () => {
     await expect(
-      executeAsyncWithLayerException(async () => {
+      exceptionHandling(async () => {
         throw new Error('async failed');
-      }, SampleLayerException)
+      }, { ExceptionType: SampleLayerException })
     ).rejects.toThrow(SampleLayerException);
   });
 
   it('uses mapped exception when mapper returns one', async () => {
     await expect(
-      executeAsyncWithLayerException(
+      exceptionHandling(
         async () => {
           throw new Error('mapped');
         },
-        SampleLayerException,
-        (error) => new SampleLayerException(`wrapped: ${String(error)}`)
+        {
+          ExceptionType: SampleLayerException,
+          mapError: (error) => new SampleLayerException(`wrapped: ${String(error)}`),
+        }
       )
     ).rejects.toThrow('wrapped: Error: mapped');
   });
@@ -56,9 +60,9 @@ describe('AppLayerException helpers', () => {
     const error = new ValidationException('campo invalido', 'user_input');
 
     expect(() =>
-      executeWithLayerException(() => {
+      syncExceptionHandling(() => {
         throw error;
-      }, SampleLayerException)
+      }, { ExceptionType: SampleLayerException })
     ).toThrow(SampleLayerException);
 
     expect(mockCaptureErrorSilently).not.toHaveBeenCalled();
@@ -68,11 +72,30 @@ describe('AppLayerException helpers', () => {
     const error = new ValidationException('response invalida', 'api_contract');
 
     expect(() =>
-      executeWithLayerException(() => {
+      syncExceptionHandling(() => {
         throw error;
-      }, SampleLayerException)
+      }, { ExceptionType: SampleLayerException })
     ).toThrow(SampleLayerException);
 
-    expect(mockCaptureErrorSilently).toHaveBeenCalledWith({ error });
+    expect(mockCaptureErrorSilently).toHaveBeenCalledWith({ error: expect.any(SampleLayerException), user: undefined });
+  });
+
+  it('uses high level handler when operation is provided', async () => {
+    const error = new Error('falhou');
+
+    await expect(
+      exceptionHandling(async () => {
+        throw error;
+      }, {
+        operation: 'salvar dados',
+        fallbackValue: 'fallback',
+      })
+    ).resolves.toBe('fallback');
+
+    expect(mockHandleHighLevelError).toHaveBeenCalledWith({
+      operation: 'salvar dados',
+      error,
+      user: undefined,
+    });
   });
 });

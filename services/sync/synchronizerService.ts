@@ -1,6 +1,6 @@
 import CheckListItem from "@/models/CheckListItem";
 import WorkOrder from "@/models/WorkOrder";
-import { executeAsyncWithLayerException } from "@/exceptions/AppLayerException";
+import { exceptionHandling, getErrorMessage } from "@/exceptions/ExceptionHandler";
 import SynchronizerServiceException from "@/exceptions/SynchronizerServiceException";
 import CheckListItemRepository from "@/repository/CheckListItemRepository";
 import CheckListRepository from '@/repository/CheckListRepository';
@@ -9,7 +9,6 @@ import WorkOrderRepository from "@/repository/WorkOrderRepository";
 import { APP_API_BASE_URL, SYNC_REQUEST_TIMEOUT_MS } from "@/services/core/apiConfig";
 import { hasWebAccess, httpRequest } from "@/services/core/networkService";
 import {getTokenStorange } from "@/storange/authStorange";
-import { getErrorMessage } from "@/exceptions/AppLayerException";
 import {
     buildChecklistApiPayload,
     buildErrorLogApiPayload,
@@ -37,13 +36,13 @@ export default class Synchronizer{
     }
 
     static async build(): Promise<Synchronizer> {
-        return executeAsyncWithLayerException(async () => {
+        return exceptionHandling(async () => {
             const instance = new Synchronizer();
             return instance;
-        }, SynchronizerServiceException)
+        }, { ExceptionType: SynchronizerServiceException })
     }
     public async run(): Promise<void>{
-        return executeAsyncWithLayerException(async () => {        
+        return exceptionHandling(async () => {        
             if(!await hasWebAccess()) throw Error("MISSING_WEB_ACCESS")
                 
             const authTokens = await getTokenStorange()
@@ -55,17 +54,17 @@ export default class Synchronizer{
             await this.sendCheckListsFilleds("/receive_checklist_api/")
             await this.sendErrorLogs("/receive_mobile_logs_api/")
             
-        }, SynchronizerServiceException, (err) => {
+        }, { ExceptionType: SynchronizerServiceException, mapError: (err) => {
             if (getErrorMessage(err).includes("SESSION_EXPIRED")) {
                 return new SynchronizerServiceException("SESSION_EXPIRED", err)
             }
             return null
-        })
+        } })
         
     }
 
     private async receivePendingOrders(endPoint:string) {
-        return executeAsyncWithLayerException(async () => {
+        return exceptionHandling(async () => {
             const workOrders = await httpRequest<WorkOrder[]>({
                 method: 'GET',
                 endpoint: endPoint,
@@ -83,11 +82,11 @@ export default class Synchronizer{
                     await workOrderRepository.save(workOrder)
                 }
             }
-        }, SynchronizerServiceException)
+        }, { ExceptionType: SynchronizerServiceException })
     }
 
     private async receiveCheckListItems(endPoint:string){
-        return executeAsyncWithLayerException(async () => {
+        return exceptionHandling(async () => {
             const checklistItemList = await httpRequest<CheckListItem[]>({
                 method: 'GET',
                 endpoint: endPoint,
@@ -102,11 +101,11 @@ export default class Synchronizer{
             for(const item of validatedChecklistItems){
                 await checkListItemRepository.save(item)
             }
-        }, SynchronizerServiceException)
+        }, { ExceptionType: SynchronizerServiceException })
     }
 
     private async sendWorkOrders(endPoint:string){
-        return executeAsyncWithLayerException(async () => {
+        return exceptionHandling(async () => {
             const workOrderRepository = await WorkOrderRepository.build()
             const workOrders = await workOrderRepository.getAll()
             const workOrdersFiltered = await workOrders.filter(item => item.status_sync !== 1)
@@ -136,11 +135,11 @@ export default class Synchronizer{
                     throw new SynchronizerServiceException(`SYNC_ENDPOINT_FAILURE:${endPoint}`);
                 }
             }
-        }, SynchronizerServiceException)
+        }, { ExceptionType: SynchronizerServiceException })
     }
 
     private async sendCheckListsFilleds(endPoint:string){
-        return executeAsyncWithLayerException(async () => {
+        return exceptionHandling(async () => {
             const checkListRepository = await CheckListRepository.build()
             const checkLists = await checkListRepository.getAll()
             const checkListsFiltered = checkLists.filter(item => item.status_sync !== 1)
@@ -168,11 +167,11 @@ export default class Synchronizer{
                     throw new SynchronizerServiceException(`SYNC_ENDPOINT_FAILURE:${endPoint}`);
                 }
             }
-        }, SynchronizerServiceException)
+        }, { ExceptionType: SynchronizerServiceException })
     }
 
     private async sendErrorLogs(endPoint:string){
-        return executeAsyncWithLayerException(async () => {
+        return exceptionHandling(async () => {
             const errorLogRepository = await ErrorLogRepository.build()
             const errorLogs = await errorLogRepository.getAll()
             const errorLogsFiltered = errorLogs.filter(item => item.status_sync !== 1)
@@ -200,7 +199,7 @@ export default class Synchronizer{
                     throw new SynchronizerServiceException(`SYNC_ENDPOINT_FAILURE:${endPoint}`);
                 }
             }
-        }, SynchronizerServiceException)
+        }, { ExceptionType: SynchronizerServiceException })
     }
 }
 

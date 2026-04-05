@@ -1,4 +1,4 @@
-import { executeAsyncWithLayerException } from '@/exceptions/AppLayerException';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import ManagementServiceException from '@/exceptions/ManagementServiceException';
 import { APP_API_BASE_URL, MANAGEMENT_REQUEST_TIMEOUT_MS } from '@/services/core/apiConfig';
 import { httpRequest } from '@/services/core/networkService';
@@ -7,7 +7,7 @@ import type { DashboardPayload } from '@/services/management';
 import { validateDashboardResponse } from '@/utils/validation';
 
 export async function fetchDashboard(): Promise<DashboardPayload> {
-  return executeAsyncWithLayerException(async () => {
+  return exceptionHandling(async () => {
     const headers = await getManagementAuthorizationHeaders();
 
     const response = await httpRequest<DashboardPayload>({
@@ -19,5 +19,5 @@ export async function fetchDashboard(): Promise<DashboardPayload> {
     });
 
     return validateDashboardResponse(response);
-  }, ManagementServiceException);
+  }, { ExceptionType: ManagementServiceException });
 }

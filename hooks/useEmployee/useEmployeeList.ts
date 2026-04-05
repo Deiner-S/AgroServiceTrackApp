@@ -1,4 +1,5 @@
 import { employeeService } from '@/services/employee';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type { EmployeeListItem } from '@/services/employee';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -18,11 +19,16 @@ export default function useEmployeeList() {
       }
 
       setError(null);
-      const response = await employeeService.fetchEmployees(query);
+      const response = await exceptionHandling(() => employeeService.fetchEmployees(query), {
+        operation: 'carregar lista de funcionarios',
+      });
+
+      if (!response) {
+        setError('Falha ao carregar funcionarios.');
+        return;
+      }
+
       setItems(response);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Falha ao carregar os dados.';
-      setError(message);
     } finally {
       setLoading(false);
       setRefreshing(false);

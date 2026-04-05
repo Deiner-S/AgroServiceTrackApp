@@ -1,6 +1,6 @@
 import WorkOrder from "@/models/WorkOrder";
 import WorkOrderRepository from "@/repository/WorkOrderRepository";
-import { executeControllerTask } from "@/services/core/controllerErrorService";
+import { exceptionHandling } from "@/exceptions/ExceptionHandler";
 import Synchronizer from "@/services/sync";
 import { useEffect, useState } from "react";
 
@@ -17,7 +17,7 @@ export default function useHomeHook() {
   const [selectedStatus, setSelectedStatus] = useState<string>("1");
 
   const loadWorkOrders = async () => {
-    return executeControllerTask(async () => {
+  return exceptionHandling(async () => {
       const workOrderRepository = await WorkOrderRepository.build();
       const data: WorkOrder[] = await workOrderRepository.getAll();
       const visibleOrders = data.filter((order) => order.status !== "4");
@@ -29,7 +29,7 @@ export default function useHomeHook() {
 
   useEffect(() => {
     async function init() {
-      await executeControllerTask(async () => {
+    await exceptionHandling(async () => {
         const synchronizer = await Synchronizer.build();
         await synchronizer.run();
         await loadWorkOrders();

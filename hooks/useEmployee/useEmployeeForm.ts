@@ -1,5 +1,5 @@
 import { employeeService } from '@/services/employee';
-import { executeControllerTask } from '@/services/core/controllerErrorService';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type {
   EmployeeDetail,
   EmployeePositionOption,
@@ -95,9 +95,14 @@ export default function useEmployeeForm(employeeId?: string) {
       try {
         setLoading(true);
         setFormError(null);
-        const detail = await employeeService.fetchEmployeeDetail(employeeId);
+        const detail = await exceptionHandling(() => employeeService.fetchEmployeeDetail(employeeId), {
+          operation: 'carregar funcionario',
+        });
 
-        if (!active) {
+        if (!active || !detail) {
+          if (active && !detail) {
+            setFormError('Falha ao carregar funcionario.');
+          }
           return;
         }
 
@@ -112,12 +117,6 @@ export default function useEmployeeForm(employeeId?: string) {
           username: detail.username,
           password: '',
         });
-      } catch (error) {
-        if (!active) {
-          return;
-        }
-
-        setFormError(error instanceof Error ? error.message : 'Falha ao carregar funcionario.');
       } finally {
         if (active) {
           setLoading(false);
@@ -179,7 +178,7 @@ export default function useEmployeeForm(employeeId?: string) {
     setFormError(null);
 
     try {
-      const detail = await executeControllerTask(
+      const detail = await exceptionHandling(
         () => employeeService.updateEmployee(employeeId, values, positionOptions),
         {
           operation: 'editar funcionario',

@@ -2,9 +2,9 @@ import CheckList from '@/models/CheckList';
 import CheckListItem from '@/models/CheckListItem';
 import WorkOrder from '@/models/WorkOrder';
 import {
-  executeAsyncWithLayerException,
-  executeWithLayerException,
-} from '@/exceptions/AppLayerException';
+  exceptionHandling,
+  syncExceptionHandling,
+} from '@/exceptions/ExceptionHandler';
 import ChecklistServiceException from '@/exceptions/ChecklistServiceException';
 import CheckListRepository from '@/repository/CheckListRepository';
 import WorkOrderRepository from '@/repository/WorkOrderRepository';
@@ -61,7 +61,7 @@ export async function hydrateChecklistState(
   checklistItems: CheckListItem[],
   workOrderOperationCode: string
 ): Promise<ChecklistStateItem[]> {
-  return executeAsyncWithLayerException(async () => {
+  return exceptionHandling(async () => {
     const existingRows = await checkListRepository.getAll();
     const existingByItem = new Map(
       existingRows
@@ -82,7 +82,7 @@ export async function hydrateChecklistState(
         hasPhotoOut: !!existing?.img_out,
       };
     });
-  }, ChecklistServiceException);
+  }, { ExceptionType: ChecklistServiceException }) as Promise<ChecklistStateItem[]>;
 }
 
 export function buildChecklistPayload({
@@ -95,7 +95,7 @@ export function buildChecklistPayload({
   dateFilled,
   signature,
 }: BuildChecklistPayloadInput): ChecklistSavePayload {
-  return executeWithLayerException(() => {
+  return syncExceptionHandling(() => {
     return validateChecklistSavePayload({
       stage,
       workOrder,
@@ -121,20 +121,20 @@ export function buildChecklistPayload({
         photoOutUri: stage === 'delivery' ? item.photoOutUri : null,
       })),
     });
-  }, ChecklistServiceException);
+  }, { ExceptionType: ChecklistServiceException }) as ChecklistSavePayload;
 }
 
 export function resolveChecklistDateChange(selectedDate?: Date): Date | null {
-  return executeWithLayerException(() => {
+  return syncExceptionHandling(() => {
     return selectedDate ?? null;
-  }, ChecklistServiceException);
+  }, { ExceptionType: ChecklistServiceException }) as Date | null;
 }
 
 export async function saveWorkOrderData(
   workOrderRepository: WorkOrderRepository,
   checklist: ChecklistSavePayload
 ): Promise<void> {
-  return executeAsyncWithLayerException(async () => {
+  return exceptionHandling(async () => {
     const validatedChecklist = validateChecklistSavePayload(checklist);
 
     if (!validatedChecklist.workOrderUpdate) {
@@ -158,14 +158,14 @@ export async function saveWorkOrderData(
         ? base64ToUint8Array(signature_out)
         : validatedChecklist.workOrder.signature_out,
     });
-  }, ChecklistServiceException);
+  }, { ExceptionType: ChecklistServiceException }) as Promise<void>;
 }
 
 export async function saveChecklistItems(
   checkListRepository: CheckListRepository,
   checklist: ChecklistSavePayload
 ): Promise<void> {
-  return executeAsyncWithLayerException(async () => {
+  return exceptionHandling(async () => {
     const validatedChecklist = validateChecklistSavePayload(checklist);
     const checklistRows = await checkListRepository.getAll();
     const rowsByItem = new Map(
@@ -205,7 +205,7 @@ export async function saveChecklistItems(
         await checkListRepository.save(nextChecklist);
       }
     }
-  }, ChecklistServiceException);
+  }, { ExceptionType: ChecklistServiceException }) as Promise<void>;
 }
 
 export async function saveChecklistData(
@@ -213,8 +213,8 @@ export async function saveChecklistData(
   checkListRepository: CheckListRepository,
   checklist: ChecklistSavePayload
 ): Promise<void> {
-  return executeAsyncWithLayerException(async () => {
+  return exceptionHandling(async () => {
     await saveWorkOrderData(workOrderRepository, checklist);
     await saveChecklistItems(checkListRepository, checklist);
-  }, ChecklistServiceException);
+  }, { ExceptionType: ChecklistServiceException }) as Promise<void>;
 }

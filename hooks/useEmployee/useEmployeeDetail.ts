@@ -1,5 +1,5 @@
 import { employeeService } from '@/services/employee';
-import { executeControllerTask } from '@/services/core/controllerErrorService';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type { EmployeeDetail } from '@/services/employee';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -26,11 +26,16 @@ export default function useEmployeeDetail(employeeId: string | undefined) {
       }
 
       setError(null);
-      const response = await employeeService.fetchEmployeeDetail(employeeId);
+      const response = await exceptionHandling(() => employeeService.fetchEmployeeDetail(employeeId), {
+        operation: 'carregar detalhes do funcionario',
+      });
+
+      if (!response) {
+        setError('Falha ao carregar funcionario.');
+        return;
+      }
+
       setItem(response);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Falha ao carregar os dados.';
-      setError(message);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -46,7 +51,7 @@ export default function useEmployeeDetail(employeeId: string | undefined) {
     setActionLoading(true);
 
     try {
-      const updated = await executeControllerTask(async () => {
+      const updated = await exceptionHandling(async () => {
         await employeeService.toggleEmployeeStatus(employeeId);
         await reload(true);
         return true;
@@ -70,7 +75,7 @@ export default function useEmployeeDetail(employeeId: string | undefined) {
     setRemovingAddressId(addressId);
 
     try {
-      const updated = await executeControllerTask(async () => {
+      const updated = await exceptionHandling(async () => {
         const response = await employeeService.deleteEmployeeAddress(employeeId, addressId);
         setItem(response);
         return true;

@@ -1,5 +1,5 @@
 import { employeeService } from '@/services/employee';
-import { executeControllerTask } from '@/services/core/controllerErrorService';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type { EmployeeAddressPayload, EmployeeDetail } from '@/services/employee';
 import {
   BRAZILIAN_STATE_OPTIONS,
@@ -100,7 +100,7 @@ export default function useEmployeeAddressForm(employeeId?: string) {
     setFormError(null);
 
     try {
-      const detail = await executeControllerTask(
+      const detail = await exceptionHandling(
         () => employeeService.createEmployeeAddress(employeeId, values),
         {
           operation: 'adicionar endereco de funcionario',

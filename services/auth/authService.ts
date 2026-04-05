@@ -1,6 +1,6 @@
 import { AuthTokens, getTokenStorange, saveTokenStorange } from "@/storange/authStorange"
 import AuthServiceException from "@/exceptions/AuthServiceException";
-import { executeAsyncWithLayerException } from "@/exceptions/AppLayerException";
+import { exceptionHandling } from "@/exceptions/ExceptionHandler";
 import { validateAuthTokensResponse, validateLoginPayload, validateRefreshTokenResponse } from "@/utils/validation";
 import { APP_API_BASE_URL, DEFAULT_REQUEST_TIMEOUT_MS } from "@/services/core/apiConfig";
 import { httpRequest } from "@/services/core/networkService";
@@ -11,14 +11,14 @@ type login = {
 }
 
 export async function haveToken(): Promise<boolean> {
-  return executeAsyncWithLayerException(async () => {
+  return exceptionHandling(async () => {
     const token = await getTokenStorange()
     return token?.access != null
-  }, AuthServiceException)
+  }, { ExceptionType: AuthServiceException })
 }
 
 export async function requestToken({ username, password }: login) {
-  return executeAsyncWithLayerException(async () => {
+  return exceptionHandling(async () => {
     const credentials = validateLoginPayload({ username, password });
 
     const response = await httpRequest<AuthTokens>({
@@ -38,7 +38,7 @@ export async function requestToken({ username, password }: login) {
       access: validatedResponse.access,
       refresh: validatedResponse.refresh
     })
-  }, AuthServiceException, (err) => {
+  }, { ExceptionType: AuthServiceException, mapError: (err) => {
     const message = String(err)
 
     if (message.includes('no_active_account') || message.toLowerCase().includes('inativo')) {
@@ -50,11 +50,11 @@ export async function requestToken({ username, password }: login) {
     }
 
     return null
-  })
+  } })
 }
 
 export async function refreshToken(): Promise<string> {
-  return executeAsyncWithLayerException(async () => {
+  return exceptionHandling(async () => {
     const tokens = await getTokenStorange()
     if (!tokens?.refresh) throw new Error('NO_REFRESH_TOKEN')
 
@@ -76,5 +76,5 @@ export async function refreshToken(): Promise<string> {
     })
 
     return validatedResponse.access
-  }, AuthServiceException)
+  }, { ExceptionType: AuthServiceException })
 }

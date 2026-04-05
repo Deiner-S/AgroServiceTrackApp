@@ -1,4 +1,4 @@
-import { executeControllerTask } from '@/services/core/controllerErrorService';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import { checklistItemService } from '@/services/checklistItem';
 import type { ChecklistItemDetail } from '@/services/checklistItem';
 import { useCallback, useEffect, useState } from 'react';
@@ -26,11 +26,16 @@ export default function useChecklistItemDetail(itemId: string | undefined) {
       }
 
       setError(null);
-      const response = await checklistItemService.fetchChecklistItemDetail(itemId);
+      const response = await exceptionHandling(() => checklistItemService.fetchChecklistItemDetail(itemId), {
+        operation: 'carregar detalhes do item de checklist',
+      });
+
+      if (!response) {
+        setError('Falha ao carregar item de checklist.');
+        return;
+      }
+
       setItem(response);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Falha ao carregar os dados.';
-      setError(message);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -46,7 +51,7 @@ export default function useChecklistItemDetail(itemId: string | undefined) {
     setActionLoading(true);
 
     try {
-      const updated = await executeControllerTask(async () => {
+      const updated = await exceptionHandling(async () => {
         await checklistItemService.toggleChecklistItemStatus(itemId);
         await reload(true);
         return true;
@@ -70,7 +75,7 @@ export default function useChecklistItemDetail(itemId: string | undefined) {
     setDeleting(true);
 
     try {
-      const removed = await executeControllerTask(async () => {
+      const removed = await exceptionHandling(async () => {
         const response = await checklistItemService.deleteChecklistItem(itemId);
 
         if (response) {

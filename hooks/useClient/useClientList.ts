@@ -1,4 +1,5 @@
 import { clientService } from '@/services/client';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type { ClientListItem } from '@/services/client';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -18,11 +19,16 @@ export default function useClientList() {
       }
 
       setError(null);
-      const response = await clientService.fetchClients(query);
+      const response = await exceptionHandling(() => clientService.fetchClients(query), {
+        operation: 'carregar lista de clientes',
+      });
+
+      if (!response) {
+        setError('Falha ao carregar clientes.');
+        return;
+      }
+
       setItems(response);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Falha ao carregar os dados.';
-      setError(message);
     } finally {
       setLoading(false);
       setRefreshing(false);

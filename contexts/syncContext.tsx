@@ -1,7 +1,7 @@
 // sync/SyncContext.tsx
-import { getErrorMessage } from '@/exceptions/AppLayerException';
+import { getErrorMessage } from '@/exceptions/ExceptionHandler';
 import { useAuth } from '@/contexts/authContext';
-import { executeControllerTask } from '@/services/core/controllerErrorService';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import Synchronizer from '@/services/sync';
 import { createContext, ReactNode, useContext, useState } from 'react';
 
@@ -26,7 +26,7 @@ export function SyncProvider({ children }: SyncProviderProps) {
         return;
       }
 
-      await executeControllerTask(async () => {
+      await exceptionHandling(async () => {
         throw error;
       }, {
         operation: 'executar sincronizaÃ§Ã£o',

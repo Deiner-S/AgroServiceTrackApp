@@ -1,4 +1,4 @@
-import { executeAsyncWithLayerException } from '@/exceptions/AppLayerException';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import NetworkServiceException from '@/exceptions/NetworkServiceException';
 import { clearTokenStorange } from '@/storange/authStorange';
 import NetInfo from '@react-native-community/netinfo';
@@ -27,7 +27,7 @@ export async function httpRequest<T>(
   controlLoading = true,
   attempt = 1
 ): Promise<T> {
-  return executeAsyncWithLayerException(async () => {
+  return exceptionHandling(async () => {
     try {
       if (controlLoading) {
         beginRequestLoading();
@@ -93,7 +93,7 @@ export async function httpRequest<T>(
         endRequestLoading();
       }
     }
-  }, NetworkServiceException)
+  }, { ExceptionType: NetworkServiceException })
 }
 
 function shouldRetryRequest(status: number | 'timeout', attempt: number): boolean {
@@ -123,11 +123,11 @@ function shouldRetryError(error: unknown, attempt: number): boolean {
 
 
 export async function hasWebAccess(): Promise<boolean> {
-    return executeAsyncWithLayerException(async () => {
+    return exceptionHandling(async () => {
       const state = await NetInfo.fetch();
     
       return Boolean(
         state.isConnected && state.isInternetReachable
       );
-    }, NetworkServiceException)
+    }, { ExceptionType: NetworkServiceException })
 }

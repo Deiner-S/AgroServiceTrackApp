@@ -1,4 +1,5 @@
 import { clientService } from '@/services/client';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type { ClientDetail } from '@/services/client';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -23,11 +24,16 @@ export default function useClientDetail(clientId: string | undefined) {
       }
 
       setError(null);
-      const response = await clientService.fetchClientDetail(clientId);
+      const response = await exceptionHandling(() => clientService.fetchClientDetail(clientId), {
+        operation: 'carregar detalhes do cliente',
+      });
+
+      if (!response) {
+        setError('Falha ao carregar cliente.');
+        return;
+      }
+
       setItem(response);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Falha ao carregar os dados.';
-      setError(message);
     } finally {
       setLoading(false);
       setRefreshing(false);

@@ -11,7 +11,7 @@ import {
   type ChecklistSavePayload,
   type ChecklistStateItem,
 } from '@/services/checklistFlow';
-import { executeControllerTask } from '@/services/core/controllerErrorService';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import { takePhoto as takePhotoService } from '@/services/core/imageService';
 import { sanitizeOnlyNumbers } from '@/utils/validation';
 import { useRoute } from '@react-navigation/native';
@@ -51,7 +51,7 @@ export default function useChecklistCollection() {
     let isMounted = true;
 
     async function init() {
-      await executeControllerTask(async () => {
+      await exceptionHandling(async () => {
         const nextWorkOrderRepository = await WorkOrderRepository.build();
         const nextCheckListRepository = await CheckListRepository.build();
         const checkListItemRepository = await CheckListItemReposytory.build();
@@ -89,7 +89,7 @@ export default function useChecklistCollection() {
     let cancelled = false;
 
     (async () => {
-      await executeControllerTask(async () => {
+      await exceptionHandling(async () => {
         const repo = await WorkOrderRepository.build();
         const loaded = await repo.getById(workOrder.operation_code);
 
@@ -120,7 +120,7 @@ export default function useChecklistCollection() {
     let cancelled = false;
 
     async function loadChecklistState() {
-      await executeControllerTask(async () => {
+      await exceptionHandling(async () => {
         if (!checkListRepository || checklistItems.length === 0) {
           return;
         }
@@ -244,7 +244,7 @@ export default function useChecklistCollection() {
       return undefined;
     }
 
-    return executeControllerTask(async () => {
+    return exceptionHandling(async () => {
       if (!workOrderRepository || !checkListRepository) {
         throw new Error('Repositorios do checklist nao inicializados.');
       }
@@ -268,7 +268,7 @@ export default function useChecklistCollection() {
   }
 
   async function takePhoto(itemId: string) {
-    const uri = await executeControllerTask(async () => {
+    const uri = await exceptionHandling(async () => {
       const nextUri = await takePhotoService();
       return nextUri ?? null;
     }, {

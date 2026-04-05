@@ -1,16 +1,16 @@
-import AppLayerException, { executeAsyncWithLayerException } from '@/exceptions/AppLayerException';
+import ExceptionHandler, { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import { APP_API_BASE_URL, MANAGEMENT_REQUEST_TIMEOUT_MS } from '@/services/core/apiConfig';
 import { httpRequest } from '@/services/core/networkService';
 import { buildManagementQuery, getManagementAuthorizationHeaders } from '@/services/management/managementApiHelpers';
 
-type ExceptionConstructor<E extends AppLayerException> = new (message: string, cause?: unknown) => E;
+type ExceptionConstructor<E extends ExceptionHandler> = new (message: string, cause?: unknown) => E;
 
-export default abstract class BaseManagementResourceService<E extends AppLayerException> {
+export default abstract class BaseManagementResourceService<E extends ExceptionHandler> {
   protected abstract readonly resourceEndpoint: string;
   protected abstract readonly ExceptionType: ExceptionConstructor<E>;
 
   protected async request<T>(method: 'GET' | 'POST' | 'PATCH' | 'DELETE', endpoint: string, body?: unknown): Promise<T> {
-    return executeAsyncWithLayerException(async () => {
+    return exceptionHandling(async () => {
       const headers = await getManagementAuthorizationHeaders();
 
       return httpRequest<T>({
@@ -21,20 +21,24 @@ export default abstract class BaseManagementResourceService<E extends AppLayerEx
         headers,
         body,
       });
-    }, this.ExceptionType);
+    }, { ExceptionType: this.ExceptionType });
   }
 
   protected async fetchList<T>(searchQuery: string, validate: (payload: unknown) => T[]): Promise<T[]> {
-    const response = await this.request<unknown>(
-      'GET',
-      `${this.resourceEndpoint}${buildManagementQuery(searchQuery)}`
-    );
-    return validate(response);
+    return exceptionHandling(async () => {
+      const response = await this.request<unknown>(
+        'GET',
+        `${this.resourceEndpoint}${buildManagementQuery(searchQuery)}`
+      );
+      return validate(response);
+    }, { ExceptionType: this.ExceptionType });
   }
 
   protected async fetchDetail<T>(identifier: string, validate: (payload: unknown) => T): Promise<T> {
-    const response = await this.request<unknown>('GET', `${this.resourceEndpoint}${identifier}/detail/`);
-    return validate(response);
+    return exceptionHandling(async () => {
+      const response = await this.request<unknown>('GET', `${this.resourceEndpoint}${identifier}/detail/`);
+      return validate(response);
+    }, { ExceptionType: this.ExceptionType });
   }
 
   protected async submit<T>(
@@ -43,22 +47,28 @@ export default abstract class BaseManagementResourceService<E extends AppLayerEx
     body: unknown,
     validate: (payload: unknown) => T
   ): Promise<T> {
-    const response = await this.request<unknown>(method, endpoint, body);
-    return validate(response);
+    return exceptionHandling(async () => {
+      const response = await this.request<unknown>(method, endpoint, body);
+      return validate(response);
+    }, { ExceptionType: this.ExceptionType });
   }
 
   protected async toggleStatus(identifier: string): Promise<boolean> {
-    const response = await this.request<unknown>(
-      'POST',
-      `${this.resourceEndpoint}${identifier}/toggle-status/`
-    );
+    return exceptionHandling(async () => {
+      const response = await this.request<unknown>(
+        'POST',
+        `${this.resourceEndpoint}${identifier}/toggle-status/`
+      );
 
-    return this.validateOkResponse(response).ok;
+      return this.validateOkResponse(response).ok;
+    }, { ExceptionType: this.ExceptionType });
   }
 
   protected async deleteResource(endpoint: string): Promise<boolean> {
-    const response = await this.request<unknown>('DELETE', endpoint);
-    return this.validateOkResponse(response).ok;
+    return exceptionHandling(async () => {
+      const response = await this.request<unknown>('DELETE', endpoint);
+      return this.validateOkResponse(response).ok;
+    }, { ExceptionType: this.ExceptionType });
   }
 
   protected abstract validateOkResponse(payload: unknown): { ok: boolean };

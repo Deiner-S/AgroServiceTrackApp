@@ -2,7 +2,7 @@ import CheckList from "@/models/CheckList";
 import CheckListItem from "@/models/CheckListItem";
 import ErrorLog from "@/models/ErrorLog";
 import WorkOrder from "@/models/WorkOrder";
-import { getErrorMessage } from "@/exceptions/AppLayerException";
+import { getErrorMessage } from "@/exceptions/ExceptionHandler";
 import RepositoryException from "@/exceptions/RepositoryException";
 import * as any from "expo-sqlite";
 

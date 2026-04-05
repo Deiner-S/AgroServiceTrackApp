@@ -1,3 +1,3 @@
-import AppLayerException from './AppLayerException';
+import ExceptionHandler from './ExceptionHandler';
 
-export default class ChecklistServiceException extends AppLayerException {}
+export default class ChecklistServiceException extends ExceptionHandler {}

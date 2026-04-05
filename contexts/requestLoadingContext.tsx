@@ -1,4 +1,4 @@
-import { executeControllerTask } from '@/services/core/controllerErrorService';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import {
   subscribeRequestLoading,
 } from '@/services/core/requestLoadingService';
@@ -20,7 +20,7 @@ export function RequestLoadingProvider({ children }: RequestLoadingProviderProps
   const [isRequestLoading, setIsRequestLoading] = useState(false);
 
   useEffect(() => {
-    const subscription = executeControllerTask(async () => {
+    const subscription = exceptionHandling(async () => {
       return subscribeRequestLoading(setIsRequestLoading);
     }, {
       operation: 'inicializar monitor de carregamento',

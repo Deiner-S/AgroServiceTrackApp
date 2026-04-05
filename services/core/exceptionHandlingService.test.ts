@@ -1,4 +1,4 @@
-import { executeControllerTask } from './controllerErrorService';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import { handleHighLevelError } from '@/utils/loggingUtil';
 
 jest.mock('@/utils/loggingUtil', () => ({
@@ -14,7 +14,7 @@ describe('controllerErrorService', () => {
 
   it('returns task result when controller action succeeds', async () => {
     await expect(
-      executeControllerTask(async () => 'ok', {
+      exceptionHandling(async () => 'ok', {
         operation: 'salvar dados',
       })
     ).resolves.toBe('ok');
@@ -26,7 +26,7 @@ describe('controllerErrorService', () => {
     const error = new Error('boom');
 
     await expect(
-      executeControllerTask(
+      exceptionHandling(
         async () => {
           throw error;
         },
@@ -48,7 +48,7 @@ describe('controllerErrorService', () => {
     const error = new Error('boom');
 
     await expect(
-      executeControllerTask(
+      exceptionHandling(
         async () => {
           throw error;
         },

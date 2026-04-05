@@ -1,4 +1,4 @@
-import { executeControllerTask } from '@/services/core/controllerErrorService';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import { checklistItemService } from '@/services/checklistItem';
 import type { ChecklistItemCreatePayload, ChecklistItemDetail } from '@/services/checklistItem';
 import { validateChecklistItemNameField } from '@/utils/validation';
@@ -63,7 +63,7 @@ export default function useChecklistItemForm() {
         name: values.name,
       };
 
-      const detail = await executeControllerTask(() => checklistItemService.createChecklistItem(payload), {
+      const detail = await exceptionHandling(() => checklistItemService.createChecklistItem(payload), {
         operation: 'cadastrar item de checklist',
       });
 

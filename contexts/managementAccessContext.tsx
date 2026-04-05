@@ -1,5 +1,6 @@
 import { useAuth } from '@/contexts/authContext';
 import { useSync } from '@/contexts/syncContext';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import { fetchDashboard } from '@/services/management';
 import type { AccessContext, DashboardModule, DashboardPayload } from '@/services/management';
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
@@ -49,11 +50,16 @@ export function ManagementAccessProvider({ children }: ManagementAccessProviderP
       }
 
       setError(null);
-      const response = await fetchDashboard();
+      const response = await exceptionHandling(() => fetchDashboard(), {
+        operation: 'carregar painel de gestao',
+      });
+
+      if (!response) {
+        setError('Falha ao carregar permissoes do painel.');
+        return;
+      }
+
       setDashboard(response);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Falha ao carregar permissoes do painel.';
-      setError(message);
     } finally {
       setLoading(false);
       setRefreshing(false);

@@ -1,12 +1,12 @@
 import {
-  executeAsyncWithLayerException,
-  executeWithLayerException,
-} from '@/exceptions/AppLayerException';
+  exceptionHandling,
+  syncExceptionHandling,
+} from '@/exceptions/ExceptionHandler';
 import ImageServiceException from '@/exceptions/ImageServiceException';
 import * as ImagePicker from 'expo-image-picker';
 
 export function base64ToUint8Array(base64: string): Uint8Array {
-  return executeWithLayerException(() => {
+  return syncExceptionHandling(() => {
     const cleanBase64 = base64.replace(/^data:image\/\w+;base64,/, '');
     const binary = atob(cleanBase64);
     const len = binary.length;
@@ -17,11 +17,11 @@ export function base64ToUint8Array(base64: string): Uint8Array {
     }
 
     return bytes;
-  }, ImageServiceException);
+  }, { ExceptionType: ImageServiceException });
 }
 
 export async function readImageAsUint8Array(uri: string): Promise<Uint8Array> {
-  return executeAsyncWithLayerException(async () => {
+  return exceptionHandling(async () => {
     const response = await fetch(uri);
     const blob = await response.blob();
 
@@ -36,11 +36,11 @@ export async function readImageAsUint8Array(uri: string): Promise<Uint8Array> {
       reader.onerror = reject;
       reader.readAsArrayBuffer(blob);
     });
-  }, ImageServiceException);
+  }, { ExceptionType: ImageServiceException });
 }
 
 export async function takePhoto(): Promise<string | null> {
-  return executeAsyncWithLayerException(async () => {
+  return exceptionHandling(async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
 
     if (!permission.granted) {
@@ -54,5 +54,5 @@ export async function takePhoto(): Promise<string | null> {
     }
 
     return result.assets[0]?.uri ?? null;
-  }, ImageServiceException);
+  }, { ExceptionType: ImageServiceException });
 }

@@ -1,3 +1,3 @@
-import AppLayerException from './AppLayerException';
+import ExceptionHandler from './ExceptionHandler';
 
-export default class ImageServiceException extends AppLayerException {}
+export default class ImageServiceException extends ExceptionHandler {}

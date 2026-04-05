@@ -1,5 +1,5 @@
 import { clientService } from '@/services/client';
-import { executeControllerTask } from '@/services/core/controllerErrorService';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type { ClientCreatePayload, ClientDetail, ClientUpdatePayload } from '@/services/client';
 import {
   formatCnpjInput,
@@ -77,9 +77,14 @@ export default function useClientForm(mode: ClientFormMode, clientId?: string) {
       try {
         setLoading(true);
         setFormError(null);
-        const detail = await clientService.fetchClientDetail(clientId);
+        const detail = await exceptionHandling(() => clientService.fetchClientDetail(clientId), {
+          operation: 'carregar cliente',
+        });
 
-        if (!active) {
+        if (!active || !detail) {
+          if (active && !detail) {
+            setFormError('Falha ao carregar cliente.');
+          }
           return;
         }
 
@@ -90,12 +95,6 @@ export default function useClientForm(mode: ClientFormMode, clientId?: string) {
           email: detail.email,
           phone: detail.phone,
         });
-      } catch (error) {
-        if (!active) {
-          return;
-        }
-
-        setFormError(error instanceof Error ? error.message : 'Falha ao carregar cliente.');
       } finally {
         if (active) {
           setLoading(false);
@@ -158,7 +157,7 @@ export default function useClientForm(mode: ClientFormMode, clientId?: string) {
           phone: values.phone,
         };
 
-        const detail = await executeControllerTask(() => clientService.createClient(payload), {
+      const detail = await exceptionHandling(() => clientService.createClient(payload), {
           operation: 'cadastrar cliente',
         });
 
@@ -180,7 +179,7 @@ export default function useClientForm(mode: ClientFormMode, clientId?: string) {
         phone: values.phone,
       };
 
-      const detail = await executeControllerTask(() => clientService.updateClient(clientId, payload), {
+      const detail = await exceptionHandling(() => clientService.updateClient(clientId, payload), {
         operation: 'editar cliente',
       });
 

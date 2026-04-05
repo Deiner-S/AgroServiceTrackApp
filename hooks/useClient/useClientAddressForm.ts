@@ -1,5 +1,5 @@
 import { clientService } from '@/services/client';
-import { executeControllerTask } from '@/services/core/controllerErrorService';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type { ClientAddressPayload, ClientDetail } from '@/services/client';
 import {
   BRAZILIAN_STATE_OPTIONS,
@@ -100,7 +100,7 @@ export default function useClientAddressForm(clientId?: string) {
     setFormError(null);
 
     try {
-      const detail = await executeControllerTask(() => clientService.createClientAddress(clientId, values), {
+      const detail = await exceptionHandling(() => clientService.createClientAddress(clientId, values), {
         operation: 'adicionar endereco de cliente',
       });
 

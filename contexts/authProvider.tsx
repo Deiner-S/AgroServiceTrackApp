@@ -1,5 +1,5 @@
 import { haveToken, requestToken } from '@/services/auth'
-import { executeControllerTask } from '@/services/core/controllerErrorService'
+import { exceptionHandling } from '@/exceptions/ExceptionHandler'
 import { clearTokenStorange } from '@/storange/authStorange'
 import { useEffect, useState } from 'react'
 import { AuthContext } from './authContext'
@@ -14,7 +14,7 @@ export function AuthProvider({ children }: props) {
 
   useEffect(() => {
     async function bootstrap() {
-      await executeControllerTask(async () => {
+      await exceptionHandling(async () => {
         const containsToken = await haveToken()
         setloged(containsToken)
       }, {
@@ -28,7 +28,7 @@ export function AuthProvider({ children }: props) {
   }, [])
 
   async function login(username: string, password: string) {
-    await executeControllerTask(async () => {
+      await exceptionHandling(async () => {
       await requestToken({ username, password })
       setloged(true)
     }, {

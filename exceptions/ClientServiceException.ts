@@ -1,3 +1,3 @@
-import AppLayerException from './AppLayerException';
+import ExceptionHandler from './ExceptionHandler';
 
-export default class ClientServiceException extends AppLayerException {}
+export default class ClientServiceException extends ExceptionHandler {}

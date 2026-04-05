@@ -1,7 +1,7 @@
 import * as SQLite from "expo-sqlite";
 import {
-  executeAsyncWithLayerException,
-} from "@/exceptions/AppLayerException";
+  exceptionHandling,
+} from "@/exceptions/ExceptionHandler";
 import RepositoryException from "@/exceptions/RepositoryException";
 import Database from "./dbInit";
 import { ColumnDefinition } from "./types";
@@ -21,10 +21,10 @@ export default abstract class BaseRepository<T> {
   }
 
   async init() {
-    return executeAsyncWithLayerException(async () => {
+    return exceptionHandling(async () => {
       this.db = await Database.getInstance();
       return this;
-    }, RepositoryException);
+    }, { ExceptionType: RepositoryException });
   }
 
   // ---------- helpers ----------
@@ -56,7 +56,7 @@ export default abstract class BaseRepository<T> {
 
   // ---------- CRUD ----------
   async getById(id: number | string): Promise<T | null> {
-    return executeAsyncWithLayerException(async () => {
+    return exceptionHandling(async () => {
       const pk = this.primaryKey();
 
       const row = await this.db.getFirstAsync<any>(
@@ -64,20 +64,20 @@ export default abstract class BaseRepository<T> {
         [id]
       );
       return row ? this.map(row) : null;
-    }, RepositoryException);
+    }, { ExceptionType: RepositoryException });
   }
 
   async getAll(): Promise<T[]> {
-    return executeAsyncWithLayerException(async () => {
+    return exceptionHandling(async () => {
       const rows = await this.db.getAllAsync<any>(
         `SELECT * FROM ${this.Model.table}`
       );
       return rows.map(r => this.map(r));
-    }, RepositoryException);
+    }, { ExceptionType: RepositoryException });
   }
 
   async save(entity: T): Promise<boolean> {
-    return executeAsyncWithLayerException(async () => {
+    return exceptionHandling(async () => {
       const validatedEntity = this.Model.validate ? this.Model.validate(entity) : entity;
       const allCols = this.columns();
       const cols = allCols.filter(col => {
@@ -94,11 +94,11 @@ export default abstract class BaseRepository<T> {
       );
 
       return result.changes > 0;
-    }, RepositoryException);
+    }, { ExceptionType: RepositoryException });
   }
 
   async update(entity: T): Promise<boolean> {
-    return executeAsyncWithLayerException(async () => {
+    return exceptionHandling(async () => {
       const validatedEntity = this.Model.validate ? this.Model.validate(entity) : entity;
       const pk = this.primaryKey();
       const cols = this.columns().filter(c => c !== pk);
@@ -115,11 +115,11 @@ export default abstract class BaseRepository<T> {
       );
 
       return result.changes > 0;
-    }, RepositoryException);
+    }, { ExceptionType: RepositoryException });
   }
 
   async delete(id: number | string): Promise<boolean> {
-    return executeAsyncWithLayerException(async () => {
+    return exceptionHandling(async () => {
       const pk = this.primaryKey();
 
       const result = await this.db.runAsync(
@@ -127,7 +127,7 @@ export default abstract class BaseRepository<T> {
         [id]
       );
       return result.changes > 0;
-    }, RepositoryException);
+    }, { ExceptionType: RepositoryException });
   }
 }
 

@@ -1,5 +1,5 @@
 import { clientService } from '@/services/client';
-import { executeControllerTask } from '@/services/core/controllerErrorService';
+import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type { ClientDetail, ClientServiceOrderPayload } from '@/services/client';
 import {
   validateServiceOperationCodeField,
@@ -74,7 +74,7 @@ export default function useClientServiceOrderForm(clientId?: string, initialOper
     setFormError(null);
 
     try {
-      const detail = await executeControllerTask(() => clientService.createClientServiceOrder(clientId, values), {
+      const detail = await exceptionHandling(() => clientService.createClientServiceOrder(clientId, values), {
         operation: 'abrir ordem de servico para cliente',
       });
 
