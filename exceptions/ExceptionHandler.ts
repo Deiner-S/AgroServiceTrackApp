@@ -126,6 +126,10 @@ export function syncExceptionHandling<T, E extends ExceptionHandler = ExceptionH
   try {
     return operation();
   } catch (error) {
+    console.log('[ExceptionHandler][syncExceptionHandling][catch]', {
+      operation: options.operation ?? 'unknown',
+      error: getErrorMessage(error),
+    });
     const handledError = resolveHandledError(error, options.ExceptionType, options.mapError);
 
     if (options.operation) {
@@ -149,6 +153,10 @@ export async function exceptionHandling<T, E extends ExceptionHandler = Exceptio
   try {
     return await operation();
   } catch (error) {
+    console.log('[ExceptionHandler][exceptionHandling][catch]', {
+      operation: options.operation ?? 'unknown',
+      error: getErrorMessage(error),
+    });
     const handledError = resolveHandledError(error, options.ExceptionType, options.mapError);
 
     if (options.operation) {
