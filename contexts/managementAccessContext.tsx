@@ -1,8 +1,9 @@
 import { useAuth } from '@/contexts/authContext';
 import { useSync } from '@/contexts/syncContext';
+import { getErrorMessage } from '@/exceptions/ExceptionHandler';
 import { hasWebAccess } from '@/services/core/networkService';
 import type { AccessContext, DashboardModule, DashboardPayload } from '@/services/management';
-import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 type ManagementAccessContextValue = {
   dashboard: DashboardPayload | null;
@@ -20,6 +21,21 @@ type ManagementAccessProviderProps = {
   children: ReactNode;
 };
 
+function getThrottleMessage(error: unknown): string | null {
+  const message = getErrorMessage(error);
+  const match = message.match(/Expected available in (\d+) seconds?/i);
+
+  if (!message.includes('HTTP 429')) {
+    return null;
+  }
+
+  if (!match) {
+    return 'Muitas requisicoes seguidas. Tente novamente em instantes.';
+  }
+
+  return `Muitas requisicoes seguidas. Tente novamente em ${match[1]} segundos.`;
+}
+
 export function ManagementAccessProvider({ children }: ManagementAccessProviderProps) {
   const { loged, session, revalidateSession } = useAuth();
   const { lastSyncAt } = useSync();
@@ -27,6 +43,11 @@ export function ManagementAccessProvider({ children }: ManagementAccessProviderP
   const [loading, setLoading] = useState(!session);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const sessionRef = useRef<DashboardPayload | null>(session);
+
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
 
   const resetState = useCallback(() => {
     setDashboard(null);
@@ -41,22 +62,24 @@ export function ManagementAccessProvider({ children }: ManagementAccessProviderP
       return;
     }
 
+    const currentSession = sessionRef.current;
+
     try {
       if (isRefresh) {
         setRefreshing(true);
       } else {
-        setLoading(!session);
+        setLoading(!currentSession);
       }
 
       setError(null);
 
-      if (session) {
-        setDashboard(session);
+      if (currentSession) {
+        setDashboard(currentSession);
       }
 
       const online = await hasWebAccess().catch(() => false);
       if (!online) {
-        if (!session) {
+        if (!currentSession) {
           setError('Sem conexao para validar permissoes e nenhum perfil offline salvo.');
         }
         return;
@@ -71,11 +94,20 @@ export function ManagementAccessProvider({ children }: ManagementAccessProviderP
       }
 
       setDashboard(response);
+    } catch (error) {
+      const throttleMessage = getThrottleMessage(error);
+
+      if (throttleMessage) {
+        setError(throttleMessage);
+        return;
+      }
+
+      setError('Nao foi possivel atualizar as permissoes no momento.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [loged, revalidateSession, resetState, session]);
+  }, [loged, revalidateSession, resetState]);
 
   useEffect(() => {
     if (!loged) {
@@ -86,6 +118,8 @@ export function ManagementAccessProvider({ children }: ManagementAccessProviderP
     if (session) {
       setDashboard(session);
       setLoading(false);
+      setError(null);
+      return;
     }
 
     void loadDashboard();

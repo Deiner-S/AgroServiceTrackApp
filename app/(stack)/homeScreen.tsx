@@ -1,5 +1,6 @@
 import AppShell from '@/components/appShell/AppShell';
 import { EmptyState, MetricCard, ModuleCard } from '@/components/management/Cards';
+import { useSync } from '@/contexts/syncContext';
 import useDashboardHook from '@/hooks/useDashboardHook';
 import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -14,14 +15,15 @@ const ICON_MAP: Record<string, keyof typeof MaterialIcons.glyphMap> = {
 };
 
 export default function HomeScreen() {
-  const { dashboard, loading, error, reload } = useDashboardHook();
+  const { dashboard, loading, error } = useDashboardHook();
+  const { runSync } = useSync();
 
   return (
     <AppShell
       title="Painel operacional"
       subtitle={dashboard ? `${dashboard.user.fullName} • ${dashboard.user.position}` : 'Visao geral do sistema'}
       rightAction={(
-        <Pressable style={styles.syncButton} onPress={() => reload(true)}>
+        <Pressable style={styles.syncButton} onPress={() => { void runSync(); }}>
           <MaterialIcons name="sync" size={20} color="#f8fafc" />
         </Pressable>
       )}

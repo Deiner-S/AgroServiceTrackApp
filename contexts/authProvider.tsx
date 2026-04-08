@@ -10,7 +10,7 @@ import { exceptionHandling } from '@/exceptions/ExceptionHandler'
 import type { DashboardPayload } from '@/services/management'
 import { clearTokenStorange, getTokenStorange } from '@/storange/authStorange'
 import NetInfo from '@react-native-community/netinfo'
-import { type ReactNode, useCallback, useEffect, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 import { AuthContext } from './authContext'
 
 type props = {
@@ -21,6 +21,7 @@ export function AuthProvider({ children }: props) {
   const [loged, setloged] = useState(false)
   const [loading, setLoading] = useState(true)
   const [session, setSession] = useState<DashboardPayload | null>(null)
+  const revalidationInFlightRef = useRef<Promise<DashboardPayload | null> | null>(null)
 
   const clearPersistedAuthState = useCallback(async () => {
     await Promise.all([
@@ -32,35 +33,51 @@ export function AuthProvider({ children }: props) {
   }, [])
 
   const revalidateSession = useCallback(async (): Promise<DashboardPayload | null> => {
-    const online = await hasWebAccess().catch(() => false)
-
-    if (!online) {
-      const storedSession = await getStoredSessionSnapshot()
-
-      if (storedSession && isOfflineSessionActive(storedSession)) {
-        setSession(storedSession)
-        setloged(true)
-        return storedSession
-      }
-
-      await clearPersistedAuthState()
-      return null
+    if (revalidationInFlightRef.current) {
+      return revalidationInFlightRef.current
     }
 
-    try {
-      const refreshedSession = await refreshSessionSnapshot()
-      setSession(refreshedSession)
-      setloged(true)
-      return refreshedSession
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
+    const revalidationPromise = (async (): Promise<DashboardPayload | null> => {
+      const online = await hasWebAccess().catch(() => false)
 
-      if (message.includes('SESSION_EXPIRED') || message.includes('AUTH_TOKEN_MISSING')) {
+      if (!online) {
+        const storedSession = await getStoredSessionSnapshot()
+
+        if (storedSession && isOfflineSessionActive(storedSession)) {
+          setSession(storedSession)
+          setloged(true)
+          return storedSession
+        }
+
         await clearPersistedAuthState()
         return null
       }
 
-      throw error
+      try {
+        const refreshedSession = await refreshSessionSnapshot()
+        setSession(refreshedSession)
+        setloged(true)
+        return refreshedSession
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+
+        if (message.includes('SESSION_EXPIRED') || message.includes('AUTH_TOKEN_MISSING')) {
+          await clearPersistedAuthState()
+          return null
+        }
+
+        throw error
+      }
+    })()
+
+    revalidationInFlightRef.current = revalidationPromise
+
+    try {
+      return await revalidationPromise
+    } finally {
+      if (revalidationInFlightRef.current === revalidationPromise) {
+        revalidationInFlightRef.current = null
+      }
     }
   }, [clearPersistedAuthState])
 
