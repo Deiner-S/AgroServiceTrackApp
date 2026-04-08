@@ -2,6 +2,8 @@ import ManagementServiceException from '@/exceptions/ManagementServiceException'
 import { BaseManagementResourceService } from '@/services/management';
 import type {
   EmployeeAddressPayload,
+  EmployeeCreateOptions,
+  EmployeeCreatePayload,
   EmployeeDetail,
   EmployeeListItem,
   EmployeePositionOption,
@@ -9,6 +11,8 @@ import type {
 } from '@/services/employee/types';
 import {
   validateEmployeeAddressPayload,
+  validateEmployeeCreateOptionsResponse,
+  validateEmployeeCreatePayload,
   validateEmployeeDetailResponse,
   validateEmployeeUpdatePayload,
   validateEmployeesResponse,
@@ -29,6 +33,18 @@ class EmployeeService extends BaseManagementResourceService<ManagementServiceExc
 
   fetchEmployeeDetail(employeeId: string): Promise<EmployeeDetail> {
     return this.fetchDetail(employeeId, validateEmployeeDetailResponse);
+  }
+
+  fetchEmployeeCreateOptions(): Promise<EmployeeCreateOptions> {
+    return this.request<unknown>('GET', `${this.resourceEndpoint}create/`).then(validateEmployeeCreateOptionsResponse);
+  }
+
+  createEmployee(
+    payload: EmployeeCreatePayload,
+    positionOptions: EmployeePositionOption[]
+  ): Promise<EmployeeDetail> {
+    const body = validateEmployeeCreatePayload(payload, positionOptions);
+    return this.submit('POST', this.resourceEndpoint, body, validateEmployeeDetailResponse);
   }
 
   updateEmployee(

@@ -8,6 +8,7 @@ export const Routes = {
   CLIENT_ADDRESS_CREATE: 'clients/clientAddressCreateScreen',
   CLIENT_SERVICE_CREATE: 'clients/clientServiceCreateScreen',
   EMPLOYEES: 'employees/employeesScreen',
+  EMPLOYEE_CREATE: 'employees/employeeCreateScreen',
   EMPLOYEE_DETAIL: 'employees/employeeDetailScreen',
   EMPLOYEE_EDIT: 'employees/employeeEditScreen',
   EMPLOYEE_ADDRESS_CREATE: 'employees/employeeAddressCreateScreen',

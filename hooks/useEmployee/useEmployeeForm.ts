@@ -1,6 +1,7 @@
 import { employeeService } from '@/services/employee';
 import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type {
+  EmployeeCreatePayload,
   EmployeeDetail,
   EmployeePositionOption,
   EmployeeUpdatePayload,
@@ -20,7 +21,8 @@ import {
 } from '@/utils/validation';
 import { useCallback, useEffect, useState } from 'react';
 
-type EmployeeFormValues = EmployeeUpdatePayload;
+type EmployeeFormMode = 'create' | 'edit';
+type EmployeeFormValues = EmployeeCreatePayload;
 type EmployeeField = keyof EmployeeFormValues;
 type EmployeeFormErrors = Partial<Record<EmployeeField, string>>;
 
@@ -38,7 +40,8 @@ const INITIAL_VALUES: EmployeeFormValues = {
 function getFieldError(
   field: EmployeeField,
   value: string,
-  positionOptions: EmployeePositionOption[]
+  positionOptions: EmployeePositionOption[],
+  mode: EmployeeFormMode
 ): string | undefined {
   try {
     switch (field) {
@@ -64,7 +67,7 @@ function getFieldError(
         validateEmployeeUsernameField(value);
         return undefined;
       case 'password':
-        validateEmployeePasswordField(value);
+        validateEmployeePasswordField(value, mode === 'create');
         return undefined;
       default:
         return undefined;
@@ -74,27 +77,44 @@ function getFieldError(
   }
 }
 
-export default function useEmployeeForm(employeeId?: string) {
+export default function useEmployeeForm(mode: EmployeeFormMode, employeeId?: string) {
   const [values, setValues] = useState<EmployeeFormValues>(INITIAL_VALUES);
   const [errors, setErrors] = useState<EmployeeFormErrors>({});
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(mode === 'edit');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [positionOptions, setPositionOptions] = useState<EmployeePositionOption[]>([]);
 
   useEffect(() => {
-    if (!employeeId) {
-      setLoading(false);
-      setFormError('Identificador invalido.');
-      return;
-    }
-
     let active = true;
 
-    async function loadEmployee() {
+    async function loadForm() {
       try {
         setLoading(true);
         setFormError(null);
+
+        if (mode === 'create') {
+          const options = await exceptionHandling(() => employeeService.fetchEmployeeCreateOptions(), {
+            operation: 'carregar cadastro de funcionario',
+          });
+
+          if (!active || !options) {
+            if (active && !options) {
+              setFormError('Falha ao carregar opcoes do cadastro.');
+            }
+            return;
+          }
+
+          setPositionOptions(options.positionOptions);
+          setValues(INITIAL_VALUES);
+          return;
+        }
+
+        if (!employeeId) {
+          setFormError('Identificador invalido.');
+          return;
+        }
+
         const detail = await exceptionHandling(() => employeeService.fetchEmployeeDetail(employeeId), {
           operation: 'carregar funcionario',
         });
@@ -124,12 +144,18 @@ export default function useEmployeeForm(employeeId?: string) {
       }
     }
 
-    loadEmployee();
+    if (mode === 'edit' && !employeeId) {
+      setLoading(false);
+      setFormError('Identificador invalido.');
+      return;
+    }
+
+    void loadForm();
 
     return () => {
       active = false;
     };
-  }, [employeeId]);
+  }, [employeeId, mode]);
 
   const setFieldValue = useCallback((field: EmployeeField, value: string) => {
     const nextValue = field === 'cpf'
@@ -143,32 +169,27 @@ export default function useEmployeeForm(employeeId?: string) {
     setValues((current) => ({ ...current, [field]: nextValue }));
     setErrors((current) => ({
       ...current,
-      [field]: current[field] ? getFieldError(field, nextValue, positionOptions) : undefined,
+      [field]: current[field] ? getFieldError(field, nextValue, positionOptions, mode) : undefined,
     }));
-  }, [positionOptions]);
+  }, [mode, positionOptions]);
 
   const validateForm = useCallback(() => {
     const nextErrors: EmployeeFormErrors = {
-      first_name: getFieldError('first_name', values.first_name, positionOptions),
-      last_name: getFieldError('last_name', values.last_name, positionOptions),
-      cpf: getFieldError('cpf', values.cpf, positionOptions),
-      phone: getFieldError('phone', values.phone, positionOptions),
-      email: getFieldError('email', values.email, positionOptions),
-      position: getFieldError('position', values.position, positionOptions),
-      username: getFieldError('username', values.username, positionOptions),
-      password: getFieldError('password', values.password ?? '', positionOptions),
+      first_name: getFieldError('first_name', values.first_name, positionOptions, mode),
+      last_name: getFieldError('last_name', values.last_name, positionOptions, mode),
+      cpf: getFieldError('cpf', values.cpf, positionOptions, mode),
+      phone: getFieldError('phone', values.phone, positionOptions, mode),
+      email: getFieldError('email', values.email, positionOptions, mode),
+      position: getFieldError('position', values.position, positionOptions, mode),
+      username: getFieldError('username', values.username, positionOptions, mode),
+      password: getFieldError('password', values.password ?? '', positionOptions, mode),
     };
 
     setErrors(nextErrors);
     return !Object.values(nextErrors).some(Boolean);
-  }, [positionOptions, values]);
+  }, [mode, positionOptions, values]);
 
   const submit = useCallback(async (): Promise<EmployeeDetail | undefined> => {
-    if (!employeeId) {
-      setFormError('Identificador invalido.');
-      return undefined;
-    }
-
     if (!validateForm()) {
       setFormError('Corrija os campos destacados antes de continuar.');
       return undefined;
@@ -178,12 +199,22 @@ export default function useEmployeeForm(employeeId?: string) {
     setFormError(null);
 
     try {
-      const detail = await exceptionHandling(
-        () => employeeService.updateEmployee(employeeId, values, positionOptions),
-        {
-          operation: 'editar funcionario',
-        }
-      );
+      const detail = mode === 'create'
+        ? await exceptionHandling(
+          () => employeeService.createEmployee(values, positionOptions),
+          { operation: 'cadastrar funcionario' }
+        )
+        : await exceptionHandling(
+          () => {
+            if (!employeeId) {
+              throw new Error('Identificador invalido.');
+            }
+
+            const payload: EmployeeUpdatePayload = values;
+            return employeeService.updateEmployee(employeeId, payload, positionOptions);
+          },
+          { operation: 'editar funcionario' }
+        );
 
       if (!detail) {
         setFormError('Falha ao salvar funcionario.');
@@ -193,7 +224,7 @@ export default function useEmployeeForm(employeeId?: string) {
     } finally {
       setSubmitting(false);
     }
-  }, [employeeId, positionOptions, validateForm, values]);
+  }, [employeeId, mode, positionOptions, validateForm, values]);
 
   return {
     values,

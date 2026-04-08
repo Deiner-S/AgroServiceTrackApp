@@ -29,6 +29,7 @@ export default function StackLayout() {
       <Stack.Screen name={Routes.CLIENT_ADDRESS_CREATE} options={{ headerShown: false }} />
       <Stack.Screen name={Routes.CLIENT_SERVICE_CREATE} options={{ headerShown: false }} />
       <Stack.Screen name={Routes.EMPLOYEES} options={{ headerShown: false }} />
+      <Stack.Screen name={Routes.EMPLOYEE_CREATE} options={{ headerShown: false }} />
       <Stack.Screen name={Routes.EMPLOYEE_DETAIL} options={{ headerShown: false }} />
       <Stack.Screen name={Routes.EMPLOYEE_EDIT} options={{ headerShown: false }} />
       <Stack.Screen name={Routes.EMPLOYEE_ADDRESS_CREATE} options={{ headerShown: false }} />

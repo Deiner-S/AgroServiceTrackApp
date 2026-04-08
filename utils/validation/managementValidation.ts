@@ -22,6 +22,7 @@ import type {
 } from '@/services/client';
 import type {
   EmployeeDetail,
+  EmployeeCreateOptions,
   EmployeeDetailPermissions,
   EmployeeListItem,
   EmployeePositionOption,
@@ -304,6 +305,16 @@ function validateEmployeePositionOptions(value: unknown): EmployeePositionOption
     return {
       value: validateString(option.value, `employeeDetail.positionOptions[${index}].value`).trim(),
       label: validateString(option.label, `employeeDetail.positionOptions[${index}].label`).trim(),
+    };
+  });
+}
+
+export function validateEmployeeCreateOptionsResponse(payload: unknown): EmployeeCreateOptions {
+  return rethrowAsValidationException('api_contract', () => {
+    const entry = validateObject(payload, 'employeeCreateOptions');
+
+    return {
+      positionOptions: validateEmployeePositionOptions(entry.positionOptions),
     };
   });
 }

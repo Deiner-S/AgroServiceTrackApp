@@ -1,6 +1,7 @@
 import { rethrowAsValidationException } from '@/exceptions/ValidationException';
 import type {
   EmployeeAddressPayload,
+  EmployeeCreatePayload,
   EmployeePositionOption,
   EmployeeUpdatePayload,
 } from '@/services/employee';
@@ -85,11 +86,29 @@ export function validateEmployeePositionField(
   });
 }
 
-export function validateEmployeePasswordField(value: string): string {
+export function validateEmployeePasswordField(value: string, required = false): string {
   return rethrowAsValidationException('user_input', () => {
-    const password = validateOptionalString(value, 'password')?.trim() ?? '';
+    const password = required
+      ? validateRequiredText(value, 'password')
+      : validateOptionalString(value, 'password')?.trim() ?? '';
     return password;
   });
+}
+
+export function validateEmployeeCreatePayload(
+  payload: EmployeeCreatePayload,
+  positionOptions: EmployeePositionOption[]
+): EmployeeCreatePayload {
+  return rethrowAsValidationException('user_input', () => ({
+    first_name: validateEmployeeFirstNameField(payload.first_name),
+    last_name: validateEmployeeLastNameField(payload.last_name),
+    cpf: validateEmployeeCpfField(payload.cpf),
+    phone: validateClientPhoneField(payload.phone),
+    email: validateClientEmailField(payload.email),
+    position: validateEmployeePositionField(payload.position, positionOptions),
+    username: validateEmployeeUsernameField(payload.username),
+    password: validateEmployeePasswordField(payload.password, true),
+  }));
 }
 
 export function validateEmployeeUpdatePayload(

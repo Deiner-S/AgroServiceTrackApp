@@ -47,6 +47,21 @@ export type EmployeeUpdatePayload = {
   password?: string;
 };
 
+export type EmployeeCreatePayload = {
+  first_name: string;
+  last_name: string;
+  cpf: string;
+  phone: string;
+  email: string;
+  position: string;
+  username: string;
+  password: string;
+};
+
+export type EmployeeCreateOptions = {
+  positionOptions: EmployeePositionOption[];
+};
+
 export type EmployeeAddressPayload = {
   street: string;
   number: string;

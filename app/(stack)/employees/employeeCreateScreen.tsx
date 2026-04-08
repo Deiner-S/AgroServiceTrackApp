@@ -3,13 +3,12 @@ import AppShell from '@/components/appShell/AppShell';
 import { DetailSection } from '@/components/management/Cards';
 import { FormActions, FormField, FormSelect } from '@/components/management/FormControls';
 import { useEmployeeForm } from '@/hooks/useEmployee';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text } from 'react-native';
 
-export default function EmployeeEditScreen() {
-  const params = useLocalSearchParams<{ employeeId?: string }>();
-  const { values, errors, loading, submitting, formError, positionOptions, setFieldValue, submit } = useEmployeeForm('edit', params.employeeId);
+export default function EmployeeCreateScreen() {
+  const { values, errors, loading, submitting, formError, positionOptions, setFieldValue, submit } = useEmployeeForm('create');
 
   async function handleSubmit() {
     const detail = await submit();
@@ -25,10 +24,10 @@ export default function EmployeeEditScreen() {
   }
 
   return (
-    <AppShell title="Editar funcionario" subtitle="Atualizacao do cadastro existente">
+    <AppShell title="Novo funcionario" subtitle="Cadastro com regras de acesso do painel">
       {loading ? <ActivityIndicator color="#38bdf8" style={styles.loader} /> : null}
 
-      <DetailSection title="Cadastro">
+      <DetailSection title="Dados do funcionario">
         {formError ? <Text style={styles.errorText}>{formError}</Text> : null}
 
         <FormField
@@ -90,15 +89,15 @@ export default function EmployeeEditScreen() {
           placeholder="usuario"
         />
         <FormField
-          label="Nova senha"
+          label="Senha"
           value={values.password ?? ''}
           onChangeText={(value) => setFieldValue('password', value)}
           error={errors.password}
-          placeholder="Preencha somente se quiser alterar"
+          placeholder="Defina uma senha de acesso"
           secureTextEntry
         />
 
-        <FormActions submitLabel="Salvar alteracoes" onSubmit={() => { void handleSubmit(); }} submitting={submitting || loading} />
+        <FormActions submitLabel="Cadastrar funcionario" onSubmit={() => { void handleSubmit(); }} submitting={submitting || loading} />
       </DetailSection>
     </AppShell>
   );

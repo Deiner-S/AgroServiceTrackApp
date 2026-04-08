@@ -1,17 +1,28 @@
 import { Routes } from '@/app/routes';
 import AppShell from '@/components/appShell/AppShell';
 import { Badge, EmptyState, RecordCard } from '@/components/management/Cards';
+import { useManagementAccess } from '@/contexts/managementAccessContext';
 import { useEmployeeList } from '@/hooks/useEmployee';
 import { formatDateLabel, getBooleanLabel } from '@/utils/managementUi';
+import { MaterialIcons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export default function EmployeesScreen() {
+  const { access } = useManagementAccess();
   const { items, searchQuery, setSearchQuery, loading, error } = useEmployeeList();
 
   return (
-    <AppShell title="Funcionarios" subtitle="Equipe e acessos do sistema">
+    <AppShell
+      title="Funcionarios"
+      subtitle="Equipe e acessos do sistema"
+      rightAction={access?.can_create_employee ? (
+        <Pressable style={styles.addButton} onPress={() => router.push(`/(stack)/${Routes.EMPLOYEE_CREATE}` as never)}>
+          <MaterialIcons name="person-add-alt-1" size={20} color="#f8fafc" />
+        </Pressable>
+      ) : undefined}
+    >
       <TextInput
         style={styles.searchInput}
         placeholder="Buscar por nome, email ou CPF"
@@ -42,6 +53,14 @@ export default function EmployeesScreen() {
 }
 
 const styles = StyleSheet.create({
+  addButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(15, 118, 110, 0.92)',
+  },
   searchInput: {
     borderRadius: 18,
     paddingHorizontal: 16,
