@@ -5,7 +5,7 @@ import CheckListRepository from '@/repository/CheckListRepository';
 import WorkOrderRepository from '@/repository/WorkOrderRepository';
 import {
   buildChecklistPayload,
-  hydrateChecklistState,
+  hydrateDeliveryChecklistState,
   saveChecklistData,
   type ChecklistSavePayload,
   type ChecklistStateItem,
@@ -25,7 +25,8 @@ export default function useChecklistDelivery() {
   const { workOrderJson } = (route.params ?? {}) as { workOrderJson?: string | string[] };
   const workOrder = useMemo(() => parseWorkOrderParam(workOrderJson), [workOrderJson]);
   const [loadedWorkOrder, setLoadedWorkOrder] = useState<WorkOrder | null>(workOrder ?? null);
-  const [checklistItems, setChecklistItems] = useState<CheckListItem[]>([]);
+  const [availableChecklistItems, setAvailableChecklistItems] = useState<CheckListItem[]>([]);
+  const [deliveryChecklistItems, setDeliveryChecklistItems] = useState<CheckListItem[]>([]);
   const [checklistState, setChecklistState] = useState<ChecklistStateItem[]>([]);
   const [checkListRepository, setCheckListRepository] = useState<CheckListRepository>();
   const [workOrderRepository, setWorkOrderRepository] = useState<WorkOrderRepository>();
@@ -54,10 +55,8 @@ export default function useChecklistDelivery() {
         setCheckListRepository(nextCheckListRepository);
 
         const data = await checkListItemRepository.getAll();
-        const filteredData = data.filter((item) => item.status !== 0);
-
         if (isMounted) {
-          setChecklistItems(filteredData);
+          setAvailableChecklistItems(data);
         }
       }, {
         operation: 'carregar checklist de entrega',
@@ -103,7 +102,7 @@ export default function useChecklistDelivery() {
 
     async function loadChecklistState() {
       await exceptionHandling(async () => {
-        if (!checkListRepository || checklistItems.length === 0) {
+        if (!checkListRepository || availableChecklistItems.length === 0) {
           return;
         }
 
@@ -111,16 +110,23 @@ export default function useChecklistDelivery() {
           return;
         }
 
-        const hydratedState = await hydrateChecklistState(
+        const hydratedState = await hydrateDeliveryChecklistState(
           checkListRepository,
-          checklistItems,
+          availableChecklistItems,
           displayOrder.operation_code
         );
 
         if (!cancelled) {
-          setChecklistState(hydratedState);
+          setChecklistState(hydratedState.map(({ name: _name, ...state }) => state));
+          setDeliveryChecklistItems(
+            hydratedState.map((item) => ({
+              id: item.id,
+              name: item.name,
+              status: 1,
+            }))
+          );
         }
-      }, {
+  }, {
         operation: 'carregar estado da entrega',
       });
     }
@@ -130,15 +136,7 @@ export default function useChecklistDelivery() {
     return () => {
       cancelled = true;
     };
-  }, [checkListRepository, checklistItems, displayOrder?.operation_code]);
-
-  const deliveryChecklistItems = useMemo(
-    () => checklistItems.filter((item) => {
-      const state = checklistState.find((checklistItemState) => checklistItemState.id === item.id);
-      return state?.selected != null;
-    }),
-    [checklistItems, checklistState]
-  );
+  }, [availableChecklistItems, checkListRepository, displayOrder?.operation_code]);
 
   const hasSignature = useMemo(() => !!signature, [signature]);
 
@@ -169,7 +167,7 @@ export default function useChecklistDelivery() {
     }
 
     return exceptionHandling(async () => {
-      if (!workOrderRepository || !checkListRepository) {
+      if (!displayOrder || !workOrderRepository || !checkListRepository) {
         throw new Error('Repositorios do checklist nao inicializados.');
       }
 

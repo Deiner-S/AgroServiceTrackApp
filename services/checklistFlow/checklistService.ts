@@ -85,6 +85,30 @@ export async function hydrateChecklistState(
   }, { ExceptionType: ChecklistServiceException }) as Promise<ChecklistStateItem[]>;
 }
 
+export async function hydrateDeliveryChecklistState(
+  checkListRepository: CheckListRepository,
+  checklistItems: CheckListItem[],
+  workOrderOperationCode: string
+): Promise<Array<ChecklistStateItem & { name: string }>> {
+  return exceptionHandling(async () => {
+    const existingRows = await checkListRepository.getAll();
+    const itemNames = new Map(checklistItems.map((item) => [item.id, item.name]));
+
+    return existingRows
+      .filter((row) => row.work_order_fk === workOrderOperationCode && row.status != null)
+      .map((row) => ({
+        id: row.checklist_item_fk,
+        name: itemNames.get(row.checklist_item_fk) ?? 'Item de checklist',
+        checklistId: row.id,
+        selected: row.status,
+        photoInUri: null,
+        photoOutUri: null,
+        hasPhotoIn: !!row.img_in,
+        hasPhotoOut: !!row.img_out,
+      }));
+  }, { ExceptionType: ChecklistServiceException }) as Promise<Array<ChecklistStateItem & { name: string }>>;
+}
+
 export function buildChecklistPayload({
   stage,
   workOrder,

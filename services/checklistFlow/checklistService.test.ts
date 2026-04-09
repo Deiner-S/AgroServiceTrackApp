@@ -2,6 +2,7 @@ import WorkOrder from '@/models/WorkOrder';
 import * as imageService from '@/services/core/imageService';
 import {
   buildChecklistPayload,
+  hydrateDeliveryChecklistState,
   hydrateChecklistState,
   resolveChecklistDateChange,
   saveChecklistItems,
@@ -84,6 +85,51 @@ describe('checklistService', () => {
         photoInUri: null,
         photoOutUri: null,
         hasPhotoIn: false,
+        hasPhotoOut: false,
+      },
+    ]);
+  });
+
+  it('hydrates delivery checklist state from persisted rows of the order', async () => {
+    const repository = {
+      getAll: jest.fn().mockResolvedValue([
+        {
+          id: 'row-1',
+          checklist_item_fk: 'item-1',
+          work_order_fk: 'wo-1',
+          status: '1',
+          img_in: new Uint8Array([1]),
+          img_out: null,
+        },
+        {
+          id: 'row-2',
+          checklist_item_fk: 'item-2',
+          work_order_fk: 'wo-2',
+          status: '2',
+          img_in: null,
+          img_out: null,
+        },
+      ]),
+    };
+
+    const result = await hydrateDeliveryChecklistState(
+      repository as any,
+      [
+        { id: 'item-1', name: 'Freio' },
+        { id: 'item-3', name: 'Pneu' },
+      ] as any,
+      'wo-1'
+    );
+
+    expect(result).toEqual([
+      {
+        id: 'item-1',
+        name: 'Freio',
+        checklistId: 'row-1',
+        selected: '1',
+        photoInUri: null,
+        photoOutUri: null,
+        hasPhotoIn: true,
         hasPhotoOut: false,
       },
     ]);
