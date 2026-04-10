@@ -249,7 +249,7 @@ describe('synchronizerService', () => {
       method: 'POST',
       endpoint: '/receive_work_orders_api/',
       BASE_URL: 'https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador',
-      timeoutMs: 20000,
+      timeoutMs: 60000,
       body: [
         {
           operation_code: 'OP-1',
@@ -342,7 +342,7 @@ describe('synchronizerService', () => {
       method: 'POST',
       endpoint: '/receive_checklist_api/',
       BASE_URL: 'https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador',
-      timeoutMs: 20000,
+      timeoutMs: 60000,
       body: [
         {
           id: '550e8400-e29b-41d4-a716-446655440000',
@@ -357,6 +357,34 @@ describe('synchronizerService', () => {
     });
     expect(checkListRepo.update).toHaveBeenCalledTimes(1);
     expect(pendingCheckList.status_sync).toBe(1);
+  });
+
+  it('sendCheckListsFilleds sends checklist rows in batches and updates each batch', async () => {
+    const pendingChecklists = Array.from({ length: 6 }, (_, index) =>
+      new CheckList(
+        `550e8400-e29b-41d4-a716-${String(446655440000 + index).padStart(12, '0')}`,
+        '550e8400-e29b-41d4-a716-446655440100',
+        'OP-1',
+        '1',
+        0
+      )
+    );
+    const checkListRepo = {
+      getAll: jest.fn().mockResolvedValue(pendingChecklists),
+      update: jest.fn(),
+    };
+    mockCheckListBuild.mockResolvedValue(checkListRepo);
+    mockHttpRequest.mockResolvedValue({ ok: true } as never);
+
+    const instance = await Synchronizer.build();
+    (instance as any).authToken = 'access-token';
+
+    await expect((instance as any).sendCheckListsFilleds('/receive_checklist_api/')).resolves.toBeUndefined();
+
+    expect(mockHttpRequest).toHaveBeenCalledTimes(2);
+    expect((mockHttpRequest.mock.calls[0][0] as { body: unknown[] }).body).toHaveLength(5);
+    expect((mockHttpRequest.mock.calls[1][0] as { body: unknown[] }).body).toHaveLength(1);
+    expect(checkListRepo.update).toHaveBeenCalledTimes(6);
   });
 
   it('sendErrorLogs sends pending mobile logs and updates them on success', async () => {
@@ -378,7 +406,7 @@ describe('synchronizerService', () => {
       method: 'POST',
       endpoint: '/receive_mobile_logs_api/',
       BASE_URL: 'https://ringless-equivalently-alijah.ngrok-free.dev/gerenciador',
-      timeoutMs: 20000,
+      timeoutMs: 60000,
       body: [
         {
           id: '550e8400-e29b-41d4-a716-446655449999',
@@ -396,5 +424,48 @@ describe('synchronizerService', () => {
     });
     expect(errorLogRepo.update).toHaveBeenCalledTimes(1);
     expect(pendingLog.status_sync).toBe(1);
+  });
+
+  it('sendErrorLogs sends logs in batches and marks each synced batch', async () => {
+    const pendingLogs = Array.from({ length: 26 }, (_, index) => ({
+      ...makeErrorLog(0),
+      id: `550e8400-e29b-41d4-a716-${String(446655440000 + index).padStart(12, '0')}`,
+    }));
+    const errorLogRepo = {
+      getAll: jest.fn().mockResolvedValue(pendingLogs),
+      update: jest.fn(),
+    };
+    mockErrorLogBuild.mockResolvedValue(errorLogRepo);
+    mockHttpRequest.mockResolvedValue({ ok: true } as never);
+
+    const instance = await Synchronizer.build();
+    (instance as any).authToken = 'access-token';
+
+    await expect((instance as any).sendErrorLogs('/receive_mobile_logs_api/')).resolves.toBeUndefined();
+
+    expect(mockHttpRequest).toHaveBeenCalledTimes(2);
+    expect(mockHttpRequest).toHaveBeenNthCalledWith(1, expect.objectContaining({
+      body: expect.any(Array),
+    }));
+    expect((mockHttpRequest.mock.calls[0][0] as { body: unknown[] }).body).toHaveLength(25);
+    expect((mockHttpRequest.mock.calls[1][0] as { body: unknown[] }).body).toHaveLength(1);
+    expect(errorLogRepo.update).toHaveBeenCalledTimes(26);
+  });
+
+  it('sendErrorLogs does not fail the whole sync when log upload breaks', async () => {
+    const pendingLog = makeErrorLog(0);
+    const errorLogRepo = {
+      getAll: jest.fn().mockResolvedValue([pendingLog]),
+      update: jest.fn(),
+    };
+    mockErrorLogBuild.mockResolvedValue(errorLogRepo);
+    mockHttpRequest.mockRejectedValue(new Error('REQUEST_TIMEOUT'));
+
+    const instance = await Synchronizer.build();
+    (instance as any).authToken = 'access-token';
+
+    await expect((instance as any).sendErrorLogs('/receive_mobile_logs_api/')).resolves.toBeUndefined();
+
+    expect(errorLogRepo.update).not.toHaveBeenCalled();
   });
 });

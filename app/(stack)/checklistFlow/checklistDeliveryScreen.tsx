@@ -16,16 +16,27 @@ export default function ChecklistDeliveryScreen() {
   const { runSync } = useSync();
   const insets = useSafeAreaInsets();
   const displayOrder = checklist.displayOrder;
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   async function handleSave() {
-    const saved = await checklist.saveChecklist();
-
-    if (!saved) {
+    if (isSubmitting) {
       return;
     }
 
-    await runSync();
-    navigation.navigate(Routes.HOME);
+    setIsSubmitting(true);
+
+    try {
+      const saved = await checklist.saveChecklist();
+
+      if (!saved) {
+        return;
+      }
+
+      await runSync();
+      navigation.navigate(Routes.HOME);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -99,10 +110,17 @@ export default function ChecklistDeliveryScreen() {
 
         <View style={styles.footer}>
           <Pressable
-            style={({ pressed }) => [styles.submitButton, pressed && styles.submitButtonPressed]}
+            disabled={isSubmitting}
+            style={({ pressed }) => [
+              styles.submitButton,
+              isSubmitting && styles.submitButtonDisabled,
+              !isSubmitting && pressed && styles.submitButtonPressed,
+            ]}
             onPress={handleSave}
           >
-            <Text style={styles.buttonText}>Salvar checklist de entrega</Text>
+            <Text style={styles.buttonText}>
+              {isSubmitting ? 'Salvando...' : 'Salvar checklist de entrega'}
+            </Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -181,6 +199,9 @@ const styles = StyleSheet.create({
   submitButtonPressed: {
     opacity: 0.85,
     transform: [{ scale: 0.98 }],
+  },
+  submitButtonDisabled: {
+    opacity: 0.65,
   },
   buttonText: {
     color: '#FFFFFF',

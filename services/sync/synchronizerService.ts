@@ -6,7 +6,11 @@ import CheckListItemRepository from "@/repository/CheckListItemRepository";
 import CheckListRepository from '@/repository/CheckListRepository';
 import ErrorLogRepository from "@/repository/ErrorLogRepository";
 import WorkOrderRepository from "@/repository/WorkOrderRepository";
-import { APP_API_BASE_URL, SYNC_REQUEST_TIMEOUT_MS } from "@/services/core/apiConfig";
+import {
+    APP_API_BASE_URL,
+    SYNC_REQUEST_TIMEOUT_MS,
+    SYNC_WRITE_REQUEST_TIMEOUT_MS,
+} from "@/services/core/apiConfig";
 import { hasWebAccess, httpRequest } from "@/services/core/networkService";
 import {getTokenStorange } from "@/storange/authStorange";
 import {
@@ -19,6 +23,23 @@ import {
     validateWorkOrderApiEntries,
     validateWorkOrderApiResponse,
 } from "@/utils/validation";
+
+const ERROR_LOG_SYNC_BATCH_SIZE = 25;
+const CHECKLIST_SYNC_BATCH_SIZE = 5;
+
+function chunkItems<T>(items: T[], size: number): T[][] {
+    if (size <= 0) {
+        return [items];
+    }
+
+    const chunks: T[][] = [];
+
+    for (let index = 0; index < items.length; index += size) {
+        chunks.push(items.slice(index, index + size));
+    }
+
+    return chunks;
+}
 
 
 // tasks
@@ -120,7 +141,7 @@ export default class Synchronizer{
                     method: 'POST',
                     endpoint: endPoint,
                     BASE_URL: this.baseUrl,
-                    timeoutMs: SYNC_REQUEST_TIMEOUT_MS,
+                    timeoutMs: SYNC_WRITE_REQUEST_TIMEOUT_MS,
                     body: validatedWorkOrders,
                     headers: {Authorization: `Bearer ${this.authToken}`,}
                 })
@@ -147,24 +168,31 @@ export default class Synchronizer{
 
             if (validatedChecklists.length === 0){
                 return;
-            }else{
+            }
+
+            const checklistChunks = chunkItems(validatedChecklists, CHECKLIST_SYNC_BATCH_SIZE)
+
+            for (const [batchIndex, batch] of checklistChunks.entries()) {
                 const response = await httpRequest<{ ok: boolean }>({
                         method: 'POST',
                         endpoint: endPoint,
                         BASE_URL: this.baseUrl,
-                        timeoutMs: SYNC_REQUEST_TIMEOUT_MS,
-                        body: validatedChecklists,
+                        timeoutMs: SYNC_WRITE_REQUEST_TIMEOUT_MS,
+                        body: batch,
                         headers: {Authorization: `Bearer ${this.authToken}`,}
                 })
                 const validatedResponse = validateOkResponse(response)
 
-                if(validatedResponse.ok){
-                    for(const checkList of checkListsFiltered){
-                        checkList.status_sync = 1
-                        await checkListRepository.update(checkList)
-                    }
-                }else{
-                    throw new SynchronizerServiceException(`SYNC_ENDPOINT_FAILURE:${endPoint}`);
+                if(!validatedResponse.ok){
+                    throw new SynchronizerServiceException(`SYNC_ENDPOINT_FAILURE:${endPoint}:batch:${batchIndex + 1}`);
+                }
+
+                const batchStart = batchIndex * CHECKLIST_SYNC_BATCH_SIZE
+                const currentChecklists = checkListsFiltered.slice(batchStart, batchStart + batch.length)
+
+                for(const checkList of currentChecklists){
+                    checkList.status_sync = 1
+                    await checkListRepository.update(checkList)
                 }
             }
         }, { ExceptionType: SynchronizerServiceException })
@@ -179,27 +207,37 @@ export default class Synchronizer{
 
             if (validatedLogs.length === 0){
                 return;
-            }else{
+            }
+
+            const logChunks = chunkItems(validatedLogs, ERROR_LOG_SYNC_BATCH_SIZE)
+
+            for (const [batchIndex, batch] of logChunks.entries()) {
                 const response = await httpRequest<{ ok: boolean }>({
                         method: 'POST',
                         endpoint: endPoint,
                         BASE_URL: this.baseUrl,
-                        timeoutMs: SYNC_REQUEST_TIMEOUT_MS,
-                        body: validatedLogs,
+                        timeoutMs: SYNC_WRITE_REQUEST_TIMEOUT_MS,
+                        body: batch,
                         headers: {Authorization: `Bearer ${this.authToken}`,}
                 })
                 const validatedResponse = validateOkResponse(response)
 
-                if(validatedResponse.ok){
-                    for(const errorLog of errorLogsFiltered){
-                        errorLog.status_sync = 1
-                        await errorLogRepository.update(errorLog)
-                    }
-                }else{
-                    throw new SynchronizerServiceException(`SYNC_ENDPOINT_FAILURE:${endPoint}`);
+                if(!validatedResponse.ok){
+                    throw new SynchronizerServiceException(`SYNC_ENDPOINT_FAILURE:${endPoint}:batch:${batchIndex + 1}`);
+                }
+
+                const batchStart = batchIndex * ERROR_LOG_SYNC_BATCH_SIZE
+                const currentLogs = errorLogsFiltered.slice(batchStart, batchStart + batch.length)
+
+                for(const errorLog of currentLogs){
+                    errorLog.status_sync = 1
+                    await errorLogRepository.update(errorLog)
                 }
             }
-        }, { ExceptionType: SynchronizerServiceException })
+        }, {
+            ExceptionType: SynchronizerServiceException,
+            rethrow: false,
+        })
     }
 }
 
