@@ -26,7 +26,8 @@ export async function requestToken({ username, password }: login) {
       endpoint: '/api/token/',
       BASE_URL: APP_API_BASE_URL,
       timeoutMs: DEFAULT_REQUEST_TIMEOUT_MS,
-      body: credentials
+      body: credentials,
+      skipAuthRefreshOnUnauthorized: true,
     })
 
     const validatedResponse = validateAuthTokensResponse(response);

@@ -140,15 +140,24 @@ export function AuthProvider({ children }: props) {
         throw new Error('SESSION_VALIDATION_FAILED')
       }
     }, {
-      operation: 'realizar login',
       user: username,
       rethrow: true,
       mapError: (error) => {
-        if (String(error).includes('SESSION_VALIDATION_FAILED')) {
-          return new Error('Nao foi possivel validar a sessao apos o login.')
+        const message = String(error)
+
+        if (message.includes('INVALID_CREDENTIALS')) {
+          return new Error('Credenciais invalidas.')
         }
 
-        return null
+        if (message.includes('INACTIVE_USER')) {
+          return new Error('Usuario inativo ou credenciais invalidas.')
+        }
+
+        if (message.includes('SESSION_VALIDATION_FAILED')) {
+          return new Error('Falha ao fazer login.')
+        }
+
+        return new Error('Falha ao fazer login.')
       },
     })
   }

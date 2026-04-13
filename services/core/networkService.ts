@@ -18,6 +18,7 @@ interface RequestOptions {
   headers?: Record<string, string>;
   BASE_URL: String;
   timeoutMs?: number;
+  skipAuthRefreshOnUnauthorized?: boolean;
 }
 
 
@@ -46,7 +47,11 @@ export async function httpRequest<T>(
         clearTimeout(timeoutId);
       });
 
-      if (response.status === 401 && !retried) {
+      if (
+        response.status === 401 &&
+        !retried &&
+        !options.skipAuthRefreshOnUnauthorized
+      ) {
         try {
           const refreshedAccessToken = await refreshToken()
           return httpRequest<T>({

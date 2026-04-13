@@ -1,8 +1,9 @@
-import { Routes } from '@/app/routes';
+import { Routes } from '@/utils/routes';
 import { useAuth } from '@/contexts/authContext';
 import { useManagementAccess } from '@/contexts/managementAccessContext';
 import { useSync } from '@/contexts/syncContext';
 import { MaterialIcons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import React, { ReactNode, useMemo, useState } from 'react';
 import {
@@ -37,6 +38,7 @@ export default function AppShell({ title, subtitle, children, rightAction, conte
   const { logout } = useAuth();
   const { modules, loading } = useManagementAccess();
   const insets = useSafeAreaInsets();
+  const appVersion = Constants.expoConfig?.version ?? '1.0.0';
 
   const drawerItems = useMemo<DrawerItem[]>(() => {
     const moduleItems: DrawerItem[] = modules
@@ -121,6 +123,8 @@ export default function AppShell({ title, subtitle, children, rightAction, conte
                 <Text style={styles.drawerItemText}>{item.label}</Text>
               </Pressable>
             ))}
+
+            <Text style={styles.versionText}>Version {appVersion}</Text>
           </Pressable>
         </Pressable>
       </Modal>
@@ -247,5 +251,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     marginLeft: 12,
+  },
+  versionText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 6,
   },
 });
