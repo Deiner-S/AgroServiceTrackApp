@@ -1,5 +1,5 @@
 import WorkOrder from '@/models/WorkOrder';
-import * as imageService from '@/services/core/imageService';
+import * as imageService from '@/services/imageService';
 import {
   buildChecklistPayload,
   hydrateDeliveryChecklistState,
@@ -13,7 +13,7 @@ jest.mock('uuid', () => ({
   v4: jest.fn(() => 'generated-uuid'),
 }));
 
-jest.mock('@/services/core/imageService', () => ({
+jest.mock('@/services/imageService', () => ({
   base64ToUint8Array: jest.fn(),
   readImageAsUint8Array: jest.fn(),
 }));

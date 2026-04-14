@@ -9,9 +9,10 @@ import {
   saveChecklistData,
   type ChecklistSavePayload,
   type ChecklistStateItem,
-} from '@/services/checklistFlow';
+} from '@/services/checklistService';
 import { exceptionHandling } from '@/exceptions/ExceptionHandler';
-import { takePhoto as takePhotoService } from '@/services/core/imageService';
+import { takePhoto as takePhotoService } from '@/services/imageService';
+import { CHECKLIST_FLOW_MESSAGES } from '@/hooks/useChecklistFlow/messages';
 import { parseWorkOrderParam } from '@/utils/orderNavigation';
 import { useRoute } from '@react-navigation/native';
 import { useEffect, useMemo, useState } from 'react';
@@ -153,7 +154,7 @@ export default function useChecklistDelivery() {
 
   function validateBeforeSave(): boolean {
     if (!signature.trim()) {
-      setFormErrors({ signature: 'Campo obrigatorio' });
+      setFormErrors({ signature: CHECKLIST_FLOW_MESSAGES.requiredField });
       return false;
     }
 
@@ -168,7 +169,7 @@ export default function useChecklistDelivery() {
 
     return exceptionHandling(async () => {
       if (!displayOrder || !workOrderRepository || !checkListRepository) {
-        throw new Error('Repositorios do checklist nao inicializados.');
+        throw new Error(CHECKLIST_FLOW_MESSAGES.checklistRepositoriesNotInitialized);
       }
 
       const payload = buildChecklistPayload({

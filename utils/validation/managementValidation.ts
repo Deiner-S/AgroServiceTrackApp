@@ -1,4 +1,9 @@
 import { rethrowAsValidationException } from '@/exceptions/ValidationException';
+import {
+  buildBooleanFieldMessage,
+  buildListFieldMessage,
+  buildNumericFieldMessage,
+} from '@/utils/validation/messages';
 import type {
   AccessContext,
   ChecklistExecutionSummary,
@@ -42,12 +47,12 @@ import {
 } from '@/utils/validation/helpers';
 
 function validateBoolean(value: unknown, fieldName: string): boolean {
-  assertCondition(typeof value === 'boolean', `${fieldName} deve ser booleano.`);
+  assertCondition(typeof value === 'boolean', buildBooleanFieldMessage(fieldName));
   return value;
 }
 
 function validateNumber(value: unknown, fieldName: string): number {
-  assertCondition(typeof value === 'number' && Number.isFinite(value), `${fieldName} deve ser numerico.`);
+  assertCondition(typeof value === 'number' && Number.isFinite(value), buildNumericFieldMessage(fieldName));
   return value;
 }
 
@@ -147,7 +152,7 @@ function validateDashboardModule(payload: unknown, index: number): DashboardModu
 
 function validateDashboardSession(payload: unknown): DashboardSession {
   const entry = validateObject(payload, 'session');
-  assertCondition(Array.isArray(entry.scope), 'session.scope deve ser uma lista.');
+  assertCondition(Array.isArray(entry.scope), buildListFieldMessage('session.scope'));
 
   return {
     validatedAt: validateIsoDatetime(entry.validatedAt, 'session.validatedAt'),
@@ -236,7 +241,7 @@ function validateOrderListItem(payload: unknown, label: string): OrderListItem {
 }
 
 function validateAddressList(value: unknown, label: string) {
-  assertCondition(Array.isArray(value), `${label} deve ser uma lista.`);
+  assertCondition(Array.isArray(value), buildListFieldMessage(label));
 
   return value.map((entry, index) => {
     const address = validateObject(entry, `${label}[${index}]`);
@@ -249,7 +254,7 @@ function validateAddressList(value: unknown, label: string) {
 }
 
 function validateChecklistExecutions(value: unknown): ChecklistExecutionSummary[] {
-  assertCondition(Array.isArray(value), 'checklists deve ser uma lista.');
+  assertCondition(Array.isArray(value), buildListFieldMessage('checklists'));
 
   return value.map((entry, index) => {
     const checklist = validateObject(entry, `checklists[${index}]`);
@@ -270,7 +275,7 @@ function validateCollection<T>(
   label: string,
   validator: (entry: unknown, label: string) => T
 ): T[] {
-  assertCondition(Array.isArray(payload), `${label} deve ser uma lista.`);
+  assertCondition(Array.isArray(payload), buildListFieldMessage(label));
   return payload.map((entry, index) => validator(entry, `${label}[${index}]`));
 }
 
@@ -297,7 +302,7 @@ export function validateDashboardResponse(payload: unknown): DashboardPayload {
 }
 
 function validateEmployeePositionOptions(value: unknown): EmployeePositionOption[] {
-  assertCondition(Array.isArray(value), 'employeeDetail.positionOptions deve ser uma lista.');
+  assertCondition(Array.isArray(value), buildListFieldMessage('employeeDetail.positionOptions'));
 
   return value.map((entry, index) => {
     const option = validateObject(entry, `employeeDetail.positionOptions[${index}]`);

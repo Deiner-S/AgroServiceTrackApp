@@ -1,12 +1,14 @@
-import { requestToken } from '@/services/auth'
+import { requestToken } from '@/services/authService'
 import {
   clearSessionSnapshot,
   getStoredSessionSnapshot,
   isOfflineSessionActive,
   refreshSessionSnapshot,
-} from '@/services/auth/sessionService'
-import { hasWebAccess } from '@/services/core/networkService'
+} from '@/services/sessionService'
+import { hasWebAccess } from '@/services/networkService'
+import { CONTEXT_MESSAGES } from '@/contexts/messages'
 import { exceptionHandling } from '@/exceptions/ExceptionHandler'
+import { SERVICE_ERROR_CODES } from '@/services/messages'
 import type { DashboardPayload } from '@/services/management'
 import { clearTokenStorange, getTokenStorange } from '@/storange/authStorange'
 import NetInfo from '@react-native-community/netinfo'
@@ -61,7 +63,7 @@ export function AuthProvider({ children }: props) {
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
 
-        if (message.includes('SESSION_EXPIRED') || message.includes('AUTH_TOKEN_MISSING')) {
+        if (message.includes(SERVICE_ERROR_CODES.sessionExpired) || message.includes(SERVICE_ERROR_CODES.authTokenMissing)) {
           await clearPersistedAuthState()
           return null
         }
@@ -137,7 +139,7 @@ export function AuthProvider({ children }: props) {
 
       const refreshedSession = await revalidateSession()
       if (!refreshedSession) {
-        throw new Error('SESSION_VALIDATION_FAILED')
+        throw new Error(SERVICE_ERROR_CODES.sessionValidationFailed)
       }
     }, {
       user: username,
@@ -145,19 +147,19 @@ export function AuthProvider({ children }: props) {
       mapError: (error) => {
         const message = String(error)
 
-        if (message.includes('INVALID_CREDENTIALS')) {
-          return new Error('Credenciais invalidas.')
+        if (message.includes(SERVICE_ERROR_CODES.invalidCredentials)) {
+          return new Error(CONTEXT_MESSAGES.invalidCredentials)
         }
 
-        if (message.includes('INACTIVE_USER')) {
-          return new Error('Usuario inativo ou credenciais invalidas.')
+        if (message.includes(SERVICE_ERROR_CODES.inactiveUser)) {
+          return new Error(CONTEXT_MESSAGES.inactiveUserOrInvalidCredentials)
         }
 
-        if (message.includes('SESSION_VALIDATION_FAILED')) {
-          return new Error('Falha ao fazer login.')
+        if (message.includes(SERVICE_ERROR_CODES.sessionValidationFailed)) {
+          return new Error(CONTEXT_MESSAGES.loginFailed)
         }
 
-        return new Error('Falha ao fazer login.')
+        return new Error(CONTEXT_MESSAGES.loginFailed)
       },
     })
   }

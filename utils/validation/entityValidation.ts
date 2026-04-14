@@ -2,12 +2,16 @@ import type CheckList from '@/models/CheckList';
 import type CheckListItem from '@/models/CheckListItem';
 import type ErrorLog from '@/models/ErrorLog';
 import type WorkOrder from '@/models/WorkOrder';
+import {
+  buildIntegerFieldMessage,
+  VALIDATION_MESSAGES,
+} from '@/utils/validation/messages';
 import { assertCondition, validateBlob, validateIsoDatetime, validateString, validateUuid } from '@/utils/validation/helpers';
 import { validateChecklistStatus } from '@/utils/validation/statusValidation';
 import { validateChassi, validateHorimetro, validateModel, validateServiceText } from '@/utils/validation/textValidation';
 
 export function validateWorkOrderEntity(entity: WorkOrder): WorkOrder {
-  assertCondition(typeof entity === 'object' && entity !== null, 'WorkOrder invalida.');
+  assertCondition(typeof entity === 'object' && entity !== null, VALIDATION_MESSAGES.invalidWorkOrderEntity);
 
   const validated = {
     ...entity,
@@ -27,7 +31,7 @@ export function validateWorkOrderEntity(entity: WorkOrder): WorkOrder {
     insertDate: entity.insertDate ? validateIsoDatetime(entity.insertDate, 'insertDate') : undefined,
   };
 
-  assertCondition(Number.isInteger(validated.status_sync), 'status_sync deve ser um numero inteiro.');
+  assertCondition(Number.isInteger(validated.status_sync), buildIntegerFieldMessage('status_sync'));
   return validated as WorkOrder;
 }
 
@@ -44,7 +48,7 @@ export function validateCheckListEntity(entity: CheckList): CheckList {
   };
 
   if (validated.status_sync != null) {
-    assertCondition(Number.isInteger(validated.status_sync), 'status_sync deve ser um numero inteiro.');
+    assertCondition(Number.isInteger(validated.status_sync), buildIntegerFieldMessage('status_sync'));
   }
 
   return validated as CheckList;
@@ -58,7 +62,7 @@ export function validateCheckListItemEntity(entity: CheckListItem): CheckListIte
     status: Number(entity.status),
   };
 
-  assertCondition(Number.isInteger(validated.status), 'status deve ser um numero inteiro.');
+  assertCondition(Number.isInteger(validated.status), buildIntegerFieldMessage('status'));
   return validated as CheckListItem;
 }
 
@@ -78,11 +82,11 @@ export function validateErrorLogEntity(entity: ErrorLog): ErrorLog {
 
   assertCondition(
     Number.isInteger(validated.status_sync) && (validated.status_sync === 0 || validated.status_sync === 1),
-    'status_sync deve ser 0 ou 1.'
+    VALIDATION_MESSAGES.invalidStatusSync
   );
   assertCondition(
     ['online', 'offline', 'unknown'].includes(validated.connectionStatus),
-    'connectionStatus deve ser online, offline ou unknown.'
+    VALIDATION_MESSAGES.invalidConnectionStatus
   );
 
   return validated as ErrorLog;

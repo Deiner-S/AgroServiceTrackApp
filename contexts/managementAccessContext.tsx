@@ -1,8 +1,9 @@
 import { useAuth } from '@/contexts/authContext';
 import { useSync } from '@/contexts/syncContext';
 import { getErrorMessage } from '@/exceptions/ExceptionHandler';
-import { hasWebAccess } from '@/services/core/networkService';
+import { hasWebAccess } from '@/services/networkService';
 import type { AccessContext, DashboardModule, DashboardPayload } from '@/services/management';
+import { buildRetryAfterSecondsMessage, CONTEXT_MESSAGES } from '@/contexts/messages';
 import React, { createContext, ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 type ManagementAccessContextValue = {
@@ -30,10 +31,10 @@ function getThrottleMessage(error: unknown): string | null {
   }
 
   if (!match) {
-    return 'Muitas requisicoes seguidas. Tente novamente em instantes.';
+    return CONTEXT_MESSAGES.tooManyRequests;
   }
 
-  return `Muitas requisicoes seguidas. Tente novamente em ${match[1]} segundos.`;
+  return buildRetryAfterSecondsMessage(match[1]);
 }
 
 export function ManagementAccessProvider({ children }: ManagementAccessProviderProps) {
@@ -80,7 +81,7 @@ export function ManagementAccessProvider({ children }: ManagementAccessProviderP
       const online = await hasWebAccess().catch(() => false);
       if (!online) {
         if (!currentSession) {
-          setError('Sem conexao para validar permissoes e nenhum perfil offline salvo.');
+          setError(CONTEXT_MESSAGES.offlineWithoutPermissions);
         }
         return;
       }
@@ -89,7 +90,7 @@ export function ManagementAccessProvider({ children }: ManagementAccessProviderP
 
       if (!response) {
         setDashboard(null);
-        setError('Sessao expirada. Faca login novamente.');
+        setError(CONTEXT_MESSAGES.sessionExpired);
         return;
       }
 
@@ -102,7 +103,7 @@ export function ManagementAccessProvider({ children }: ManagementAccessProviderP
         return;
       }
 
-      setError('Nao foi possivel atualizar as permissoes no momento.');
+      setError(CONTEXT_MESSAGES.permissionsRefreshUnavailable);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -154,7 +155,7 @@ export function useManagementAccess() {
   const context = useContext(ManagementAccessContext);
 
   if (!context) {
-    throw new Error('useManagementAccess must be used within ManagementAccessProvider');
+    throw new Error(CONTEXT_MESSAGES.useManagementAccessWithinProvider);
   }
 
   return context;

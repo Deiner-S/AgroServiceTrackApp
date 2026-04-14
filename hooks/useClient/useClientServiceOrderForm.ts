@@ -5,6 +5,7 @@ import {
   validateServiceOperationCodeField,
   validateServiceSymptomsField,
 } from '@/utils/validation';
+import { CLIENT_HOOK_MESSAGES } from '@/hooks/useClient/messages';
 import { useCallback, useState } from 'react';
 
 type ServiceField = keyof ClientServiceOrderPayload;
@@ -33,7 +34,7 @@ export default function useClientServiceOrderForm(clientId?: string, initialOper
               }
               return undefined;
             } catch (error) {
-              return error instanceof Error ? error.message : 'Campo invalido.';
+              return error instanceof Error ? error.message : CLIENT_HOOK_MESSAGES.invalidField;
             }
           })()
         : undefined,
@@ -46,13 +47,13 @@ export default function useClientServiceOrderForm(clientId?: string, initialOper
     try {
       validateServiceOperationCodeField(values.operation_code);
     } catch (error) {
-      nextErrors.operation_code = error instanceof Error ? error.message : 'Campo invalido.';
+      nextErrors.operation_code = error instanceof Error ? error.message : CLIENT_HOOK_MESSAGES.invalidField;
     }
 
     try {
       validateServiceSymptomsField(values.symptoms);
     } catch (error) {
-      nextErrors.symptoms = error instanceof Error ? error.message : 'Campo invalido.';
+      nextErrors.symptoms = error instanceof Error ? error.message : CLIENT_HOOK_MESSAGES.invalidField;
     }
 
     setErrors(nextErrors);
@@ -61,12 +62,12 @@ export default function useClientServiceOrderForm(clientId?: string, initialOper
 
   const submit = useCallback(async (): Promise<ClientDetail | undefined> => {
     if (!clientId) {
-      setFormError('Identificador invalido.');
+      setFormError(CLIENT_HOOK_MESSAGES.invalidIdentifier);
       return undefined;
     }
 
     if (!validateForm()) {
-      setFormError('Corrija os campos destacados antes de continuar.');
+      setFormError(CLIENT_HOOK_MESSAGES.highlightFieldsBeforeContinue);
       return undefined;
     }
 
@@ -79,7 +80,7 @@ export default function useClientServiceOrderForm(clientId?: string, initialOper
       });
 
       if (!detail) {
-        setFormError('Falha ao abrir ordem de servico.');
+        setFormError(CLIENT_HOOK_MESSAGES.failedOpenServiceOrder);
       }
 
       return detail;

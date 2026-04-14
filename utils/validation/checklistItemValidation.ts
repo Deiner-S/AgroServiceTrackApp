@@ -1,10 +1,11 @@
 import { rethrowAsValidationException } from '@/exceptions/ValidationException';
+import { buildRequiredFieldMessage } from '@/utils/validation/messages';
 import type { ChecklistItemCreatePayload } from '@/services/checklistItem';
 import { assertCondition, validateString } from '@/utils/validation/helpers';
 
 function validateRequiredText(value: unknown, fieldName: string): string {
   const normalized = validateString(value, fieldName).trim();
-  assertCondition(normalized.length > 0, `${fieldName} e obrigatorio.`);
+  assertCondition(normalized.length > 0, buildRequiredFieldMessage(fieldName));
   return normalized;
 }
 

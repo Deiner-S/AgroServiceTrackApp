@@ -1,6 +1,7 @@
 import { checklistItemService } from '@/services/checklistItem';
 import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type { ChecklistItemListItem } from '@/services/checklistItem';
+import { CHECKLIST_ITEM_HOOK_MESSAGES } from '@/hooks/useChecklistItem/messages';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function useChecklistItemList() {
@@ -24,7 +25,7 @@ export default function useChecklistItemList() {
       });
 
       if (!response) {
-        setError('Falha ao carregar itens de checklist.');
+        setError(CHECKLIST_ITEM_HOOK_MESSAGES.failedLoadChecklistItems);
         return;
       }
 

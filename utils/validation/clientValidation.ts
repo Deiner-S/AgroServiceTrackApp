@@ -1,4 +1,11 @@
 import { rethrowAsValidationException } from '@/exceptions/ValidationException';
+import {
+  buildOnlyLettersAndSpacesMessage,
+  buildOnlyLettersNumbersAndSpacesMessage,
+  buildOnlyNumbersMessage,
+  buildRequiredFieldMessage,
+  VALIDATION_MESSAGES,
+} from '@/utils/validation/messages';
 import type {
   ClientAddressPayload,
   ClientCreatePayload,
@@ -48,7 +55,7 @@ const EMAIL_FORMAT_PATTERN = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.(com|com\.br)$/
 function validateOnlyLettersAndSpaces(value: string, fieldName: string): string {
   assertCondition(
     ONLY_LETTERS_AND_SPACES_PATTERN.test(value),
-    `${fieldName} deve conter somente letras e espacos.`
+    buildOnlyLettersAndSpacesMessage(fieldName)
   );
   return value;
 }
@@ -56,26 +63,26 @@ function validateOnlyLettersAndSpaces(value: string, fieldName: string): string 
 function validateOnlyLettersNumbersAndSpaces(value: string, fieldName: string): string {
   assertCondition(
     LETTERS_NUMBERS_AND_SPACES_PATTERN.test(value),
-    `${fieldName} deve conter somente letras, numeros e espacos.`
+    buildOnlyLettersNumbersAndSpacesMessage(fieldName)
   );
   return value;
 }
 
 function validateOnlyNumbers(value: string, fieldName: string): string {
-  assertCondition(ONLY_NUMBERS_PATTERN.test(value), `${fieldName} deve conter somente numeros.`);
+  assertCondition(ONLY_NUMBERS_PATTERN.test(value), buildOnlyNumbersMessage(fieldName));
   return value;
 }
 
 function validateRequiredText(value: unknown, fieldName: string): string {
   const normalized = validateString(value, fieldName).trim();
-  assertCondition(normalized.length > 0, `${fieldName} e obrigatorio.`);
+  assertCondition(normalized.length > 0, buildRequiredFieldMessage(fieldName));
   return normalized;
 }
 
 export function validateClientCnpjField(value: string): string {
   return rethrowAsValidationException('user_input', () => {
     const cnpj = validateRequiredText(value, 'cnpj');
-    assertCondition(CNPJ_FORMAT_PATTERN.test(cnpj), 'CNPJ invalido. Use o formato XX.XXX.XXX/XXXX-XX.');
+    assertCondition(CNPJ_FORMAT_PATTERN.test(cnpj), VALIDATION_MESSAGES.invalidCnpj);
     return cnpj;
   });
 }
@@ -92,7 +99,7 @@ export function validateClientEmailField(value: string): string {
     const email = validateRequiredText(value, 'email');
     assertCondition(
       EMAIL_FORMAT_PATTERN.test(email),
-      'E-mail invalido. Use o formato nome@dominio.com ou nome@dominio.com.br.'
+      VALIDATION_MESSAGES.invalidEmail
     );
     return email;
   });
@@ -103,7 +110,7 @@ export function validateClientPhoneField(value: string): string {
     const phone = validateRequiredText(value, 'phone');
     assertCondition(
       PHONE_FORMAT_PATTERN.test(phone),
-      'Telefone invalido. Use o formato (YY) XXXXX-XXXX ou (YY) XXXX-XXXX.'
+      VALIDATION_MESSAGES.invalidPhone
     );
     return phone;
   });
@@ -147,7 +154,7 @@ export function validateAddressStateField(value: string): string {
     const state = validateRequiredText(value, 'state');
     assertCondition(
       BRAZILIAN_STATE_OPTIONS.includes(state as (typeof BRAZILIAN_STATE_OPTIONS)[number]),
-      'Selecione um estado valido.'
+      VALIDATION_MESSAGES.invalidStateSelection
     );
     return state;
   });
@@ -156,7 +163,7 @@ export function validateAddressStateField(value: string): string {
 export function validateAddressZipCodeField(value: string): string {
   return rethrowAsValidationException('user_input', () => {
     const zipCode = validateRequiredText(value, 'zip_code');
-    assertCondition(ZIP_CODE_FORMAT_PATTERN.test(zipCode), 'CEP invalido. Use o formato XXXXX-XXX.');
+    assertCondition(ZIP_CODE_FORMAT_PATTERN.test(zipCode), VALIDATION_MESSAGES.invalidZipCode);
     return zipCode;
   });
 }

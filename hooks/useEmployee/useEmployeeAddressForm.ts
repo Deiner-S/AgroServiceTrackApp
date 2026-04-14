@@ -11,6 +11,7 @@ import {
   validateAddressStreetField,
   validateAddressZipCodeField,
 } from '@/utils/validation';
+import { EMPLOYEE_HOOK_MESSAGES } from '@/hooks/useEmployee/messages';
 import { useCallback, useState } from 'react';
 
 type AddressField = keyof EmployeeAddressPayload;
@@ -51,7 +52,7 @@ function getFieldError(field: AddressField, value: string): string | undefined {
         return undefined;
     }
   } catch (error) {
-    return error instanceof Error ? error.message : 'Campo invalido.';
+    return error instanceof Error ? error.message : EMPLOYEE_HOOK_MESSAGES.invalidField;
   }
 }
 
@@ -87,12 +88,12 @@ export default function useEmployeeAddressForm(employeeId?: string) {
 
   const submit = useCallback(async (): Promise<EmployeeDetail | undefined> => {
     if (!employeeId) {
-      setFormError('Identificador invalido.');
+      setFormError(EMPLOYEE_HOOK_MESSAGES.invalidIdentifier);
       return undefined;
     }
 
     if (!validateForm()) {
-      setFormError('Corrija os campos destacados antes de continuar.');
+      setFormError(EMPLOYEE_HOOK_MESSAGES.highlightFieldsBeforeContinue);
       return undefined;
     }
 
@@ -108,7 +109,7 @@ export default function useEmployeeAddressForm(employeeId?: string) {
       );
 
       if (!detail) {
-        setFormError('Falha ao adicionar endereco.');
+        setFormError(EMPLOYEE_HOOK_MESSAGES.failedAddAddress);
       }
 
       return detail;

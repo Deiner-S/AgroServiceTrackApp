@@ -1,4 +1,5 @@
 import { rethrowAsValidationException } from '@/exceptions/ValidationException';
+import { buildRequiredFieldMessage, VALIDATION_MESSAGES } from '@/utils/validation/messages';
 import { validateAllowedKeys, validateObject, validateString } from '@/utils/validation/helpers';
 import { validateOnlyLowercaseLetters } from '@/utils/validation/textValidation';
 
@@ -8,7 +9,7 @@ export function validateLoginPayload(payload: { username: string; password: stri
     const password = validateString(payload.password, 'password').trim();
 
     if (!password.length) {
-      throw new Error('password e obrigatorio.');
+      throw new Error(buildRequiredFieldMessage('password'));
     }
 
     return {
@@ -46,7 +47,7 @@ export function validateOkResponse(value: unknown): { ok: boolean } {
     const payload = validateObject(value, 'response');
 
     if (typeof payload.ok !== 'boolean') {
-      throw new Error('response.ok deve ser booleano.');
+      throw new Error(VALIDATION_MESSAGES.responseOkMustBeBoolean);
     }
 
     return { ok: payload.ok };

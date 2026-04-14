@@ -8,7 +8,7 @@ import {
 import ChecklistServiceException from '@/exceptions/ChecklistServiceException';
 import CheckListRepository from '@/repository/CheckListRepository';
 import WorkOrderRepository from '@/repository/WorkOrderRepository';
-import { base64ToUint8Array, readImageAsUint8Array } from '@/services/core/imageService';
+import { base64ToUint8Array, readImageAsUint8Array } from '@/services/imageService';
 import { validateChecklistSavePayload } from '@/utils/validation';
 import { v4 as uuidv4 } from 'uuid';
 

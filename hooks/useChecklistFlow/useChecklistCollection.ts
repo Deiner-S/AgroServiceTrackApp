@@ -10,9 +10,10 @@ import {
   saveChecklistData,
   type ChecklistSavePayload,
   type ChecklistStateItem,
-} from '@/services/checklistFlow';
+} from '@/services/checklistService';
 import { exceptionHandling } from '@/exceptions/ExceptionHandler';
-import { takePhoto as takePhotoService } from '@/services/core/imageService';
+import { takePhoto as takePhotoService } from '@/services/imageService';
+import { CHECKLIST_FLOW_MESSAGES } from '@/hooks/useChecklistFlow/messages';
 import { parseWorkOrderParam } from '@/utils/orderNavigation';
 import { sanitizeOnlyNumbers } from '@/utils/validation';
 import { useRoute } from '@react-navigation/native';
@@ -215,25 +216,25 @@ export default function useChecklistCollection() {
     const nextErrors: ChecklistCollectionErrors = { items: {} };
 
     if (!chassi.trim()) {
-      nextErrors.chassi = 'Campo obrigatorio';
+      nextErrors.chassi = CHECKLIST_FLOW_MESSAGES.requiredField;
     }
 
     if (!horimetroInput.trim()) {
-      nextErrors.horimetro = 'Campo obrigatorio';
+      nextErrors.horimetro = CHECKLIST_FLOW_MESSAGES.requiredField;
     }
 
     if (!modelo.trim()) {
-      nextErrors.modelo = 'Campo obrigatorio';
+      nextErrors.modelo = CHECKLIST_FLOW_MESSAGES.requiredField;
     }
 
     for (const item of checklistState) {
       if (!item.selected) {
-        nextErrors.items[item.id] = 'Campo obrigatorio';
+        nextErrors.items[item.id] = CHECKLIST_FLOW_MESSAGES.requiredField;
       }
     }
 
     if (!signature.trim()) {
-      nextErrors.signature = 'Campo obrigatorio';
+      nextErrors.signature = CHECKLIST_FLOW_MESSAGES.requiredField;
     }
 
     setFormErrors(nextErrors);
@@ -252,7 +253,7 @@ export default function useChecklistCollection() {
 
     return exceptionHandling(async () => {
       if (!workOrderRepository || !checkListRepository) {
-        throw new Error('Repositorios do checklist nao inicializados.');
+        throw new Error(CHECKLIST_FLOW_MESSAGES.checklistRepositoriesNotInitialized);
       }
 
       const payload = buildChecklistPayload({

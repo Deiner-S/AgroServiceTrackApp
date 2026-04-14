@@ -5,11 +5,11 @@ import CheckListItemRepository from '@/repository/CheckListItemRepository';
 import CheckListRepository from '@/repository/CheckListRepository';
 import ErrorLogRepository from '@/repository/ErrorLogRepository';
 import WorkOrderRepository from '@/repository/WorkOrderRepository';
-import { hasWebAccess, httpRequest } from '@/services/core/networkService';
+import { hasWebAccess, httpRequest } from '@/services/networkService';
 import { getTokenStorange } from '@/storange/authStorange';
 import Synchronizer from './synchronizerService';
 
-jest.mock('@/services/core/networkService', () => ({
+jest.mock('@/services/networkService', () => ({
   hasWebAccess: jest.fn(),
   httpRequest: jest.fn(),
 }));

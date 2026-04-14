@@ -2,13 +2,13 @@ import {
   fetchDashboard,
 } from './managementService';
 import { getTokenStorange } from '@/storange/authStorange';
-import { httpRequest } from '@/services/core/networkService';
+import { httpRequest } from '@/services/networkService';
 
 jest.mock('@/storange/authStorange', () => ({
   getTokenStorange: jest.fn(),
 }));
 
-jest.mock('@/services/core/networkService', () => ({
+jest.mock('@/services/networkService', () => ({
   httpRequest: jest.fn(),
 }));
 

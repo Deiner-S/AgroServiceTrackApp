@@ -2,6 +2,7 @@ import ErrorLogServiceException from '@/exceptions/ErrorLogServiceException';
 import { isUserInputValidationException } from '@/exceptions/ValidationException';
 import ErrorLog from '@/models/ErrorLog';
 import ErrorLogRepository from '@/repository/ErrorLogRepository';
+import { buildHighLevelOperationMessage, LOGGING_TITLES } from '@/utils/loggingMessages';
 import NetInfo from '@react-native-community/netinfo';
 import { Alert, Platform } from 'react-native';
 import { v4 as uuidv4 } from 'uuid';
@@ -144,5 +145,5 @@ export async function handleHighLevelError({
   if (!isUserInputValidationException(error)) {
     await captureErrorSilently({ error, user });
   }
-  Alert.alert('Erro', `Falha ao ${operation}. Tente novamente.`);
+  Alert.alert(LOGGING_TITLES.genericError, buildHighLevelOperationMessage(operation));
 }

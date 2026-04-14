@@ -1,6 +1,7 @@
 import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import { checklistItemService } from '@/services/checklistItem';
 import type { ChecklistItemDetail } from '@/services/checklistItem';
+import { CHECKLIST_ITEM_HOOK_MESSAGES } from '@/hooks/useChecklistItem/messages';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function useChecklistItemDetail(itemId: string | undefined) {
@@ -13,7 +14,7 @@ export default function useChecklistItemDetail(itemId: string | undefined) {
 
   const reload = useCallback(async (isRefresh = false) => {
     if (!itemId) {
-      setError('Identificador invalido.');
+      setError(CHECKLIST_ITEM_HOOK_MESSAGES.invalidIdentifier);
       setLoading(false);
       return;
     }
@@ -31,7 +32,7 @@ export default function useChecklistItemDetail(itemId: string | undefined) {
       });
 
       if (!response) {
-        setError('Falha ao carregar item de checklist.');
+        setError(CHECKLIST_ITEM_HOOK_MESSAGES.failedLoadChecklistItem);
         return;
       }
 
@@ -44,7 +45,7 @@ export default function useChecklistItemDetail(itemId: string | undefined) {
 
   const toggleStatus = useCallback(async () => {
     if (!itemId) {
-      setError('Identificador invalido.');
+      setError(CHECKLIST_ITEM_HOOK_MESSAGES.invalidIdentifier);
       return false;
     }
 
@@ -68,7 +69,7 @@ export default function useChecklistItemDetail(itemId: string | undefined) {
 
   const deleteItem = useCallback(async () => {
     if (!itemId) {
-      setError('Identificador invalido.');
+      setError(CHECKLIST_ITEM_HOOK_MESSAGES.invalidIdentifier);
       return false;
     }
 

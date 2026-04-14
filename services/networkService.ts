@@ -2,7 +2,8 @@ import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import NetworkServiceException from '@/exceptions/NetworkServiceException';
 import { clearTokenStorange } from '@/storange/authStorange';
 import NetInfo from '@react-native-community/netinfo';
-import { refreshToken } from '@/services/auth/authService';
+import { refreshToken } from '@/services/authService';
+import { SERVICE_ERROR_CODES } from '@/services/messages';
 import { beginRequestLoading, endRequestLoading } from './requestLoadingService';
 
 
@@ -63,7 +64,7 @@ export async function httpRequest<T>(
           }, true, false, attempt)
         } catch {
           await clearTokenStorange()
-          throw new NetworkServiceException('SESSION_EXPIRED')
+          throw new NetworkServiceException(SERVICE_ERROR_CODES.sessionExpired)
         }
       }
 

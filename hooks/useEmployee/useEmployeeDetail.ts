@@ -1,6 +1,7 @@
 import { employeeService } from '@/services/employee';
 import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type { EmployeeDetail } from '@/services/employee';
+import { EMPLOYEE_HOOK_MESSAGES } from '@/hooks/useEmployee/messages';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function useEmployeeDetail(employeeId: string | undefined) {
@@ -13,7 +14,7 @@ export default function useEmployeeDetail(employeeId: string | undefined) {
 
   const reload = useCallback(async (isRefresh = false) => {
     if (!employeeId) {
-      setError('Identificador invalido.');
+      setError(EMPLOYEE_HOOK_MESSAGES.invalidIdentifier);
       setLoading(false);
       return;
     }
@@ -31,7 +32,7 @@ export default function useEmployeeDetail(employeeId: string | undefined) {
       });
 
       if (!response) {
-        setError('Falha ao carregar funcionario.');
+        setError(EMPLOYEE_HOOK_MESSAGES.failedLoadEmployee);
         return;
       }
 
@@ -44,7 +45,7 @@ export default function useEmployeeDetail(employeeId: string | undefined) {
 
   const toggleStatus = useCallback(async () => {
     if (!employeeId) {
-      setError('Identificador invalido.');
+      setError(EMPLOYEE_HOOK_MESSAGES.invalidIdentifier);
       return false;
     }
 
@@ -68,7 +69,7 @@ export default function useEmployeeDetail(employeeId: string | undefined) {
 
   const removeAddress = useCallback(async (addressId: string) => {
     if (!employeeId) {
-      setError('Identificador invalido.');
+      setError(EMPLOYEE_HOOK_MESSAGES.invalidIdentifier);
       return false;
     }
 

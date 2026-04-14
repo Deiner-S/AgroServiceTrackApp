@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/authContext'
+import { APP_MESSAGES, APP_TITLES } from '@/app/messages'
 import { sanitizeOnlyLowercaseLetters, validateLoginPayload } from '@/utils/validation'
 import { MaterialIcons } from '@expo/vector-icons'
 import { router } from 'expo-router'
@@ -28,8 +29,8 @@ export default function Login() {
       await login(credentials.username, credentials.password)
       router.replace('/(stack)/homeScreen')
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Dados de login inválidos.'
-      Alert.alert('Login', message)
+      const message = error instanceof Error ? error.message : APP_MESSAGES.invalidLoginData
+      Alert.alert(APP_TITLES.login, message)
     }
   }
 

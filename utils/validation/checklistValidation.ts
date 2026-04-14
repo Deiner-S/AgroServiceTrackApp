@@ -1,9 +1,10 @@
 import { rethrowAsValidationException } from '@/exceptions/ValidationException';
+import { buildListFieldMessage, VALIDATION_MESSAGES } from '@/utils/validation/messages';
 import type {
   ChecklistItemPayload,
   ChecklistSavePayload,
   ChecklistWorkOrderUpdatePayload,
-} from '@/services/checklistFlow';
+} from '@/services/checklistService';
 import { assertCondition, validateString, validateIsoDatetime, validateUuid } from '@/utils/validation/helpers';
 import { validateChecklistStatus, validateWorkOrderStatus } from '@/utils/validation/statusValidation';
 import {
@@ -61,8 +62,8 @@ export function validateChecklistItemPayload(
 export function validateChecklistSavePayload(payload: ChecklistSavePayload): ChecklistSavePayload {
   return rethrowAsValidationException('user_input', () => {
     validateWorkOrderEntity(payload.workOrder);
-    assertCondition(payload.stage === 'collection' || payload.stage === 'delivery', 'stage invalido.');
-    assertCondition(Array.isArray(payload.items), 'items deve ser uma lista.');
+    assertCondition(payload.stage === 'collection' || payload.stage === 'delivery', VALIDATION_MESSAGES.invalidStage);
+    assertCondition(Array.isArray(payload.items), buildListFieldMessage('items'));
 
     return {
       ...payload,

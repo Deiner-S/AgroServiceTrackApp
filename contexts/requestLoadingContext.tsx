@@ -1,7 +1,7 @@
 import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import {
   subscribeRequestLoading,
-} from '@/services/core/requestLoadingService';
+} from '@/services/requestLoadingService';
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 
 type RequestLoadingContextType = {

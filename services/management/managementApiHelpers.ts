@@ -1,10 +1,11 @@
 import { getTokenStorange } from '@/storange/authStorange';
+import { SERVICE_ERROR_CODES } from '@/services/messages';
 
 export async function getManagementAuthorizationHeaders() {
   const tokens = await getTokenStorange();
 
   if (!tokens?.access) {
-    throw new Error('AUTH_TOKEN_MISSING');
+    throw new Error(SERVICE_ERROR_CODES.authTokenMissing);
   }
 
   return {

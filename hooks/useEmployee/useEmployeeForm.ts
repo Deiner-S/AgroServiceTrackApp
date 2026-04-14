@@ -19,6 +19,7 @@ import {
   validateClientEmailField,
   validateClientPhoneField,
 } from '@/utils/validation';
+import { EMPLOYEE_HOOK_MESSAGES } from '@/hooks/useEmployee/messages';
 import { useCallback, useEffect, useState } from 'react';
 
 type EmployeeFormMode = 'create' | 'edit';
@@ -73,7 +74,7 @@ function getFieldError(
         return undefined;
     }
   } catch (error) {
-    return error instanceof Error ? error.message : 'Campo invalido.';
+    return error instanceof Error ? error.message : EMPLOYEE_HOOK_MESSAGES.invalidField;
   }
 }
 
@@ -100,7 +101,7 @@ export default function useEmployeeForm(mode: EmployeeFormMode, employeeId?: str
 
           if (!active || !options) {
             if (active && !options) {
-              setFormError('Falha ao carregar opcoes do cadastro.');
+              setFormError(EMPLOYEE_HOOK_MESSAGES.failedLoadEmployeeOptions);
             }
             return;
           }
@@ -111,7 +112,7 @@ export default function useEmployeeForm(mode: EmployeeFormMode, employeeId?: str
         }
 
         if (!employeeId) {
-          setFormError('Identificador invalido.');
+          setFormError(EMPLOYEE_HOOK_MESSAGES.invalidIdentifier);
           return;
         }
 
@@ -121,7 +122,7 @@ export default function useEmployeeForm(mode: EmployeeFormMode, employeeId?: str
 
         if (!active || !detail) {
           if (active && !detail) {
-            setFormError('Falha ao carregar funcionario.');
+            setFormError(EMPLOYEE_HOOK_MESSAGES.failedLoadEmployee);
           }
           return;
         }
@@ -146,7 +147,7 @@ export default function useEmployeeForm(mode: EmployeeFormMode, employeeId?: str
 
     if (mode === 'edit' && !employeeId) {
       setLoading(false);
-      setFormError('Identificador invalido.');
+      setFormError(EMPLOYEE_HOOK_MESSAGES.invalidIdentifier);
       return;
     }
 
@@ -191,7 +192,7 @@ export default function useEmployeeForm(mode: EmployeeFormMode, employeeId?: str
 
   const submit = useCallback(async (): Promise<EmployeeDetail | undefined> => {
     if (!validateForm()) {
-      setFormError('Corrija os campos destacados antes de continuar.');
+      setFormError(EMPLOYEE_HOOK_MESSAGES.highlightFieldsBeforeContinue);
       return undefined;
     }
 
@@ -207,7 +208,7 @@ export default function useEmployeeForm(mode: EmployeeFormMode, employeeId?: str
         : await exceptionHandling(
           () => {
             if (!employeeId) {
-              throw new Error('Identificador invalido.');
+              throw new Error(EMPLOYEE_HOOK_MESSAGES.invalidIdentifier);
             }
 
             const payload: EmployeeUpdatePayload = values;
@@ -217,7 +218,7 @@ export default function useEmployeeForm(mode: EmployeeFormMode, employeeId?: str
         );
 
       if (!detail) {
-        setFormError('Falha ao salvar funcionario.');
+        setFormError(EMPLOYEE_HOOK_MESSAGES.failedSaveEmployee);
       }
 
       return detail;

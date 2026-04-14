@@ -2,6 +2,7 @@ import {
   exceptionHandling,
 } from "@/exceptions/ExceptionHandler";
 import RepositoryException from "@/exceptions/RepositoryException";
+import { buildPrimaryKeyMissingMessage } from "@/repository/messages";
 import Database from "./dbInit";
 import { ColumnDefinition } from "./types";
 
@@ -35,7 +36,7 @@ export default abstract class BaseRepository<T> {
     );
 
     if (!entry) {
-      throw new Error(`Primary key not defined for table ${this.Model.table}`);
+      throw new Error(buildPrimaryKeyMissingMessage(this.Model.table));
     }
 
     return entry[0];

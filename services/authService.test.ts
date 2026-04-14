@@ -1,5 +1,5 @@
 import { getTokenStorange, saveTokenStorange } from '@/storange/authStorange';
-import { httpRequest } from '@/services/core/networkService';
+import { httpRequest } from '@/services/networkService';
 import { haveToken, refreshToken, requestToken } from './authService';
 
 jest.mock('@/storange/authStorange', () => ({
@@ -7,7 +7,7 @@ jest.mock('@/storange/authStorange', () => ({
   saveTokenStorange: jest.fn(),
 }));
 
-jest.mock('@/services/core/networkService', () => ({
+jest.mock('@/services/networkService', () => ({
   httpRequest: jest.fn(),
 }));
 

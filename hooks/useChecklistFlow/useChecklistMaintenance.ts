@@ -1,6 +1,7 @@
 import { rethrowAsValidationException } from "@/exceptions/ValidationException";
 import WorkOrder from "@/models/WorkOrder";
 import WorkOrderRepository from "@/repository/WorkOrderRepository";
+import { CHECKLIST_FLOW_MESSAGES } from "@/hooks/useChecklistFlow/messages";
 import { parseWorkOrderParam } from "@/utils/orderNavigation";
 import { sanitizeOnlyLettersNumbersAndSpaces, validateServiceText } from "@/utils/validation";
 import { useRoute } from "@react-navigation/native";
@@ -81,7 +82,7 @@ export default function useChecklistMaintenance() {
 
   function validateBeforeSave() {
     if (!service.trim()) {
-      setServiceError("Campo obrigatorio");
+      setServiceError(CHECKLIST_FLOW_MESSAGES.requiredField);
       return false;
     }
 
@@ -91,7 +92,7 @@ export default function useChecklistMaintenance() {
 
   async function saveService() {
     if (!displayOrder) {
-      throw new Error("Ordem de servico nao informada.");
+      throw new Error(CHECKLIST_FLOW_MESSAGES.workOrderNotProvided);
     }
 
     if (!validateBeforeSave()) {

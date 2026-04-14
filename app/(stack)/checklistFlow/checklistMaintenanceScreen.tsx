@@ -2,6 +2,7 @@ import AppShell from "@/components/appShell/AppShell";
 import HeaderOSReadOnly from "@/components/checklistComponents/HeaderOSReadOnly";
 import { useSync } from "@/contexts/syncContext";
 import { useChecklistMaintenance } from "@/hooks/useChecklistFlow";
+import { APP_MESSAGES } from "@/app/messages";
 import { useNavigation } from "expo-router";
 import React from "react";
 import {
@@ -49,7 +50,7 @@ export default function ChecklistMaintenanceScreen() {
     return (
       <AppShell title="Manutencao" subtitle="Dados da ordem nao informados">
         <View style={styles.content}>
-          <Text style={styles.errorText}>Ordem de servico nao informada.</Text>
+          <Text style={styles.errorText}>{APP_MESSAGES.workOrderNotProvided}</Text>
         </View>
       </AppShell>
     );

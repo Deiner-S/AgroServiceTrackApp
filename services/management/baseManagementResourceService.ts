@@ -1,6 +1,6 @@
 import ExceptionHandler, { exceptionHandling } from '@/exceptions/ExceptionHandler';
-import { APP_API_BASE_URL, MANAGEMENT_REQUEST_TIMEOUT_MS } from '@/services/core/apiConfig';
-import { httpRequest } from '@/services/core/networkService';
+import { APP_API_BASE_URL, MANAGEMENT_REQUEST_TIMEOUT_MS } from '@/services/apiConfig';
+import { httpRequest } from '@/services/networkService';
 import { buildManagementQuery, getManagementAuthorizationHeaders } from '@/services/management/managementApiHelpers';
 
 type ExceptionConstructor<E extends ExceptionHandler> = new (message: string, cause?: unknown) => E;

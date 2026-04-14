@@ -6,21 +6,28 @@ import {
   ONLY_LOWERCASE_LETTERS_PATTERN,
   ONLY_NUMBERS_PATTERN,
 } from '@/utils/validation/constants';
+import {
+  buildOnlyLettersAndSpacesMessage,
+  buildOnlyLettersMessage,
+  buildOnlyLettersNumbersAndSpacesMessage,
+  buildOnlyNumbersMessage,
+  VALIDATION_MESSAGES,
+} from '@/utils/validation/messages';
 import { assertCondition, validateByPattern, validateOptionalString, validateString } from '@/utils/validation/helpers';
 
 export function validateOnlyNumbers(value: string): string {
-  return validateByPattern(value, ONLY_NUMBERS_PATTERN, 'O valor deve conter somente numeros.');
+  return validateByPattern(value, ONLY_NUMBERS_PATTERN, buildOnlyNumbersMessage('O valor'));
 }
 
 export function validateOnlyLetters(value: string): string {
-  return validateByPattern(value, ONLY_LETTERS_PATTERN, 'O valor deve conter somente letras.');
+  return validateByPattern(value, ONLY_LETTERS_PATTERN, buildOnlyLettersMessage('O valor'));
 }
 
 export function validateOnlyLettersAndSpaces(value: string): string {
   return validateByPattern(
     value,
     ONLY_LETTERS_AND_SPACES_PATTERN,
-    'O valor deve conter somente letras e espacos.'
+    buildOnlyLettersAndSpacesMessage('O valor')
   );
 }
 
@@ -28,7 +35,7 @@ export function validateOnlyLowercaseLetters(value: string): string {
   return validateByPattern(
     value,
     ONLY_LOWERCASE_LETTERS_PATTERN,
-    'O valor deve conter somente letras minusculas, sem espacos.'
+    VALIDATION_MESSAGES.lowercaseLettersOnly
   );
 }
 
@@ -36,7 +43,7 @@ export function validateOnlyLettersAndNumbers(value: string): string {
   return validateByPattern(
     value,
     LETTERS_AND_NUMBERS_PATTERN,
-    'O valor deve conter somente letras e numeros.'
+    VALIDATION_MESSAGES.lettersAndNumbersOnly
   );
 }
 
@@ -44,7 +51,7 @@ export function validateOnlyLettersNumbersAndSpaces(value: string): string {
   return validateByPattern(
     value,
     LETTERS_NUMBERS_AND_SPACES_PATTERN,
-    'O valor deve conter somente letras, numeros e espacos.'
+    buildOnlyLettersNumbersAndSpacesMessage('O valor')
   );
 }
 
@@ -69,7 +76,7 @@ export function validateChassi(value: unknown): string {
 
   assertCondition(
     chassi.length === 17 && /^[A-Z0-9]+$/.test(chassi),
-    'chassi invalido. Ele deve conter 17 caracteres, sem espacos e sem tracos.'
+    VALIDATION_MESSAGES.invalidChassi
   );
 
   return chassi;
@@ -81,7 +88,7 @@ export function validateModel(value: unknown): string {
 
 export function validateHorimetro(value: unknown): number {
   if (typeof value === 'number') {
-    assertCondition(Number.isFinite(value) && value >= 0, 'horimetro deve ser um numero valido.');
+    assertCondition(Number.isFinite(value) && value >= 0, VALIDATION_MESSAGES.invalidHorimetro);
     validateOnlyNumbers(String(value));
     return value;
   }

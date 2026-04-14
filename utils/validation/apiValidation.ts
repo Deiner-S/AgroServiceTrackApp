@@ -4,6 +4,11 @@ import type CheckListItem from '@/models/CheckListItem';
 import type ErrorLog from '@/models/ErrorLog';
 import type WorkOrder from '@/models/WorkOrder';
 import {
+  buildListFieldMessage,
+  buildRequiredFieldMessage,
+  VALIDATION_MESSAGES,
+} from '@/utils/validation/messages';
+import {
   CHECKLIST_ALLOWED_KEYS,
   CHECKLIST_REQUIRED_KEYS,
   WORK_ORDER_ALLOWED_KEYS,
@@ -44,7 +49,7 @@ function requireValue<T>(value: T | undefined, message: string): T {
 
 export function validateWorkOrderApiEntries(payload: unknown): JsonRecord[] {
   return rethrowAsValidationException('api_contract', () => {
-    assertCondition(Array.isArray(payload), 'work_orders deve ser uma lista.');
+    assertCondition(Array.isArray(payload), buildListFieldMessage('work_orders'));
 
     return payload.map((rawEntry, index) => {
       const label = `work_order[${index + 1}]`;
@@ -52,7 +57,7 @@ export function validateWorkOrderApiEntries(payload: unknown): JsonRecord[] {
 
       validateAllowedKeys(entry, WORK_ORDER_ALLOWED_KEYS, label);
       const operationCode = validateString(entry.operation_code, 'operation_code').trim();
-      assertCondition(operationCode.length > 0, 'operation_code e obrigatorio.');
+      assertCondition(operationCode.length > 0, buildRequiredFieldMessage('operation_code'));
       const status = validateWorkOrderStatus(entry.status);
 
       const requiredKeys = [...WORK_ORDER_REQUIRED_KEYS];
@@ -103,7 +108,7 @@ export function validateWorkOrderApiEntries(payload: unknown): JsonRecord[] {
 
 export function validateChecklistApiEntries(payload: unknown): JsonRecord[] {
   return rethrowAsValidationException('api_contract', () => {
-    assertCondition(Array.isArray(payload), 'checklists deve ser uma lista.');
+    assertCondition(Array.isArray(payload), buildListFieldMessage('checklists'));
 
     return payload.map((rawEntry, index) => {
       const label = `checklist[${index + 1}]`;
@@ -135,22 +140,22 @@ export function buildWorkOrderApiPayload(workOrder: WorkOrder): JsonRecord {
   };
 
   if (status !== '1') {
-    payload.chassi = validateChassi(requireValue(validated.chassi, 'chassi e obrigatorio.'));
+    payload.chassi = validateChassi(requireValue(validated.chassi, buildRequiredFieldMessage('chassi')));
     payload.horimetro = validateOnlyNumbers(
-      String(validateHorimetro(requireValue(validated.horimetro, 'horimetro e obrigatorio.')))
+      String(validateHorimetro(requireValue(validated.horimetro, buildRequiredFieldMessage('horimetro'))))
     );
-    payload.model = validateModel(requireValue(validated.model, 'model e obrigatorio.'));
-    payload.date_in = validateIsoDatetime(requireValue(validated.date_in, 'date_in e obrigatorio.'), 'date_in');
+    payload.model = validateModel(requireValue(validated.model, buildRequiredFieldMessage('model')));
+    payload.date_in = validateIsoDatetime(requireValue(validated.date_in, buildRequiredFieldMessage('date_in')), 'date_in');
   }
 
   if (status === '3' || status === '4') {
-    payload.service = requireValue(validated.service, 'service e obrigatorio.');
+    payload.service = requireValue(validated.service, buildRequiredFieldMessage('service'));
   } else if (validated.service) {
     payload.service = validated.service;
   }
 
   if (status === '4') {
-    payload.date_out = validateIsoDatetime(requireValue(validated.date_out, 'date_out e obrigatorio.'), 'date_out');
+    payload.date_out = validateIsoDatetime(requireValue(validated.date_out, buildRequiredFieldMessage('date_out')), 'date_out');
   } else if (validated.date_out) {
     payload.date_out = validateIsoDatetime(validated.date_out, 'date_out');
   }
@@ -180,14 +185,14 @@ export function buildChecklistApiPayload(checkList: CheckList): JsonRecord {
 
 export function validateWorkOrderApiResponse(payload: unknown): WorkOrder[] {
   return rethrowAsValidationException('api_contract', () => {
-    assertCondition(Array.isArray(payload), 'A resposta de ordens de servico deve ser uma lista.');
+    assertCondition(Array.isArray(payload), VALIDATION_MESSAGES.workOrdersResponseMustBeList);
     return payload.map((entry) => validateWorkOrderEntity(entry as WorkOrder));
   });
 }
 
 export function validateCheckListItemApiResponse(payload: unknown): CheckListItem[] {
   return rethrowAsValidationException('api_contract', () => {
-    assertCondition(Array.isArray(payload), 'A resposta de itens de checklist deve ser uma lista.');
+    assertCondition(Array.isArray(payload), VALIDATION_MESSAGES.checklistItemsResponseMustBeList);
     return payload.map((entry) => validateCheckListItemEntity(entry as CheckListItem));
   });
 }

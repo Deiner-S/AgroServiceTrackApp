@@ -9,6 +9,7 @@ import {
   validateClientNameField,
   validateClientPhoneField,
 } from '@/utils/validation';
+import { CLIENT_HOOK_MESSAGES } from '@/hooks/useClient/messages';
 import { useCallback, useEffect, useState } from 'react';
 
 type ClientFormMode = 'create' | 'edit';
@@ -54,7 +55,7 @@ function getFieldError(field: ClientField, value: string, mode: ClientFormMode):
         return undefined;
     }
   } catch (error) {
-    return error instanceof Error ? error.message : 'Campo invalido.';
+    return error instanceof Error ? error.message : CLIENT_HOOK_MESSAGES.invalidField;
   }
 }
 
@@ -83,7 +84,7 @@ export default function useClientForm(mode: ClientFormMode, clientId?: string) {
 
         if (!active || !detail) {
           if (active && !detail) {
-            setFormError('Falha ao carregar cliente.');
+            setFormError(CLIENT_HOOK_MESSAGES.failedLoadClient);
           }
           return;
         }
@@ -141,7 +142,7 @@ export default function useClientForm(mode: ClientFormMode, clientId?: string) {
 
   const submit = useCallback(async (): Promise<ClientDetail | undefined> => {
     if (!validateForm()) {
-      setFormError('Corrija os campos destacados antes de continuar.');
+      setFormError(CLIENT_HOOK_MESSAGES.highlightFieldsBeforeContinue);
       return undefined;
     }
 
@@ -162,14 +163,14 @@ export default function useClientForm(mode: ClientFormMode, clientId?: string) {
         });
 
         if (!detail) {
-          setFormError('Falha ao salvar cliente.');
+          setFormError(CLIENT_HOOK_MESSAGES.failedSaveClient);
         }
 
         return detail;
       }
 
       if (!clientId) {
-        setFormError('Identificador invalido.');
+        setFormError(CLIENT_HOOK_MESSAGES.invalidIdentifier);
         return undefined;
       }
 
@@ -184,7 +185,7 @@ export default function useClientForm(mode: ClientFormMode, clientId?: string) {
       });
 
       if (!detail) {
-        setFormError('Falha ao salvar cliente.');
+        setFormError(CLIENT_HOOK_MESSAGES.failedSaveClient);
       }
 
       return detail;

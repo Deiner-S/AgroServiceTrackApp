@@ -1,6 +1,6 @@
 import { clearTokenStorange } from '@/storange/authStorange';
 import NetInfo from '@react-native-community/netinfo';
-import { refreshToken } from '@/services/auth/authService';
+import { refreshToken } from '@/services/authService';
 import { beginRequestLoading, endRequestLoading } from './requestLoadingService';
 import { hasWebAccess, httpRequest } from './networkService';
 
@@ -15,7 +15,7 @@ jest.mock('@react-native-community/netinfo', () => ({
   },
 }));
 
-jest.mock('@/services/auth/authService', () => ({
+jest.mock('@/services/authService', () => ({
   refreshToken: jest.fn(),
 }));
 

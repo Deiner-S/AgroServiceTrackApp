@@ -10,8 +10,8 @@ import {
     APP_API_BASE_URL,
     SYNC_REQUEST_TIMEOUT_MS,
     SYNC_WRITE_REQUEST_TIMEOUT_MS,
-} from "@/services/core/apiConfig";
-import { hasWebAccess, httpRequest } from "@/services/core/networkService";
+} from "@/services/apiConfig";
+import { hasWebAccess, httpRequest } from "@/services/networkService";
 import {getTokenStorange } from "@/storange/authStorange";
 import {
     buildChecklistApiPayload,
@@ -23,6 +23,7 @@ import {
     validateWorkOrderApiEntries,
     validateWorkOrderApiResponse,
 } from "@/utils/validation";
+import { SERVICE_ERROR_CODES } from "@/services/messages";
 
 const ERROR_LOG_SYNC_BATCH_SIZE = 25;
 const CHECKLIST_SYNC_BATCH_SIZE = 5;
@@ -64,10 +65,10 @@ export default class Synchronizer{
     }
     public async run(): Promise<void>{
         return exceptionHandling(async () => {        
-            if(!await hasWebAccess()) throw Error("MISSING_WEB_ACCESS")
+            if(!await hasWebAccess()) throw Error(SERVICE_ERROR_CODES.missingWebAccess)
                 
             const authTokens = await getTokenStorange()
-            if(authTokens?.access==null) throw Error("AUTH_TOKEN_MISSING") 
+            if(authTokens?.access==null) throw Error(SERVICE_ERROR_CODES.authTokenMissing) 
             this.authToken = authTokens.access
             await this.receivePendingOrders("/send_work_orders_api/")
             await this.receiveCheckListItems("/send_checklist_items_api/")
@@ -76,8 +77,8 @@ export default class Synchronizer{
             await this.sendErrorLogs("/receive_mobile_logs_api/")
             
         }, { ExceptionType: SynchronizerServiceException, mapError: (err) => {
-            if (getErrorMessage(err).includes("SESSION_EXPIRED")) {
-                return new SynchronizerServiceException("SESSION_EXPIRED", err)
+            if (getErrorMessage(err).includes(SERVICE_ERROR_CODES.sessionExpired)) {
+                return new SynchronizerServiceException(SERVICE_ERROR_CODES.sessionExpired, err)
             }
             return null
         } })

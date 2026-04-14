@@ -1,6 +1,7 @@
 import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import { checklistItemService } from '@/services/checklistItem';
 import type { ChecklistItemCreatePayload, ChecklistItemDetail } from '@/services/checklistItem';
+import { CHECKLIST_ITEM_HOOK_MESSAGES } from '@/hooks/useChecklistItem/messages';
 import { validateChecklistItemNameField } from '@/utils/validation';
 import { useCallback, useState } from 'react';
 
@@ -22,7 +23,7 @@ function getFieldError(field: ChecklistItemField, value: string): string | undef
         return undefined;
     }
   } catch (error) {
-    return error instanceof Error ? error.message : 'Campo invalido.';
+    return error instanceof Error ? error.message : CHECKLIST_ITEM_HOOK_MESSAGES.invalidField;
   }
 }
 
@@ -51,7 +52,7 @@ export default function useChecklistItemForm() {
 
   const submit = useCallback(async (): Promise<ChecklistItemDetail | undefined> => {
     if (!validateForm()) {
-      setFormError('Corrija os campos destacados antes de continuar.');
+      setFormError(CHECKLIST_ITEM_HOOK_MESSAGES.highlightFieldsBeforeContinue);
       return undefined;
     }
 
@@ -68,7 +69,7 @@ export default function useChecklistItemForm() {
       });
 
       if (!detail) {
-        setFormError('Falha ao salvar item de checklist.');
+        setFormError(CHECKLIST_ITEM_HOOK_MESSAGES.failedSaveChecklistItem);
       }
 
       return detail;

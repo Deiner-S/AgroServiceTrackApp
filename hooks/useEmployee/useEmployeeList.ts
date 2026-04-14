@@ -1,6 +1,7 @@
 import { employeeService } from '@/services/employee';
 import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type { EmployeeListItem } from '@/services/employee';
+import { EMPLOYEE_HOOK_MESSAGES } from '@/hooks/useEmployee/messages';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function useEmployeeList() {
@@ -24,7 +25,7 @@ export default function useEmployeeList() {
       });
 
       if (!response) {
-        setError('Falha ao carregar funcionarios.');
+        setError(EMPLOYEE_HOOK_MESSAGES.failedLoadEmployees);
         return;
       }
 

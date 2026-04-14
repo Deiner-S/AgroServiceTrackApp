@@ -1,8 +1,8 @@
 import { exceptionHandling } from "@/exceptions/ExceptionHandler";
 import WorkOrder from "@/models/WorkOrder";
 import WorkOrderRepository from "@/repository/WorkOrderRepository";
-import { hasWebAccess } from "@/services/core/networkService";
-import Synchronizer from "@/services/sync";
+import { hasWebAccess } from "@/services/networkService";
+import Synchronizer from "@/services/synchronizerService";
 import { useEffect, useState } from "react";
 
 /** Opcoes de status de ordem (alinhado ao backend). "all" = todos. */

@@ -1,6 +1,7 @@
 import { clientService } from '@/services/client';
 import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type { ClientDetail } from '@/services/client';
+import { CLIENT_HOOK_MESSAGES } from '@/hooks/useClient/messages';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function useClientDetail(clientId: string | undefined) {
@@ -11,7 +12,7 @@ export default function useClientDetail(clientId: string | undefined) {
 
   const reload = useCallback(async (isRefresh = false) => {
     if (!clientId) {
-      setError('Identificador invalido.');
+      setError(CLIENT_HOOK_MESSAGES.invalidIdentifier);
       setLoading(false);
       return;
     }
@@ -29,7 +30,7 @@ export default function useClientDetail(clientId: string | undefined) {
       });
 
       if (!response) {
-        setError('Falha ao carregar cliente.');
+        setError(CLIENT_HOOK_MESSAGES.failedLoadClient);
         return;
       }
 

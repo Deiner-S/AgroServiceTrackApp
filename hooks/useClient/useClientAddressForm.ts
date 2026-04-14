@@ -11,6 +11,7 @@ import {
   validateAddressStreetField,
   validateAddressZipCodeField,
 } from '@/utils/validation';
+import { CLIENT_HOOK_MESSAGES } from '@/hooks/useClient/messages';
 import { useCallback, useState } from 'react';
 
 type AddressField = 'street' | 'number' | 'complement' | 'city' | 'state' | 'zip_code';
@@ -51,7 +52,7 @@ function getFieldError(field: AddressField, value: string): string | undefined {
         return undefined;
     }
   } catch (error) {
-    return error instanceof Error ? error.message : 'Campo invalido.';
+    return error instanceof Error ? error.message : CLIENT_HOOK_MESSAGES.invalidField;
   }
 }
 
@@ -87,12 +88,12 @@ export default function useClientAddressForm(clientId?: string) {
 
   const submit = useCallback(async (): Promise<ClientDetail | undefined> => {
     if (!clientId) {
-      setFormError('Identificador invalido.');
+      setFormError(CLIENT_HOOK_MESSAGES.invalidIdentifier);
       return undefined;
     }
 
     if (!validateForm()) {
-      setFormError('Corrija os campos destacados antes de continuar.');
+      setFormError(CLIENT_HOOK_MESSAGES.highlightFieldsBeforeContinue);
       return undefined;
     }
 
@@ -105,7 +106,7 @@ export default function useClientAddressForm(clientId?: string) {
       });
 
       if (!detail) {
-        setFormError('Falha ao adicionar endereco.');
+        setFormError(CLIENT_HOOK_MESSAGES.failedAddAddress);
       }
 
       return detail;

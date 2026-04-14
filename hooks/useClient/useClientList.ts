@@ -1,6 +1,7 @@
 import { clientService } from '@/services/client';
 import { exceptionHandling } from '@/exceptions/ExceptionHandler';
 import type { ClientListItem } from '@/services/client';
+import { CLIENT_HOOK_MESSAGES } from '@/hooks/useClient/messages';
 import { useCallback, useEffect, useState } from 'react';
 
 export default function useClientList() {
@@ -24,7 +25,7 @@ export default function useClientList() {
       });
 
       if (!response) {
-        setError('Falha ao carregar clientes.');
+        setError(CLIENT_HOOK_MESSAGES.failedLoadClients);
         return;
       }
 

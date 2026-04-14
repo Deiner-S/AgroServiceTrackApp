@@ -1,4 +1,5 @@
 import { rethrowAsValidationException } from '@/exceptions/ValidationException';
+import { buildRequiredFieldMessage, VALIDATION_MESSAGES } from '@/utils/validation/messages';
 import type {
   EmployeeAddressPayload,
   EmployeeCreatePayload,
@@ -26,7 +27,7 @@ const CPF_FORMAT_PATTERN = /^\d{3}\.\d{3}\.\d{3}-\d{2}$/;
 
 function validateRequiredText(value: unknown, fieldName: string): string {
   const normalized = validateString(value, fieldName).trim();
-  assertCondition(normalized.length > 0, `${fieldName} e obrigatorio.`);
+  assertCondition(normalized.length > 0, buildRequiredFieldMessage(fieldName));
   return normalized;
 }
 
@@ -60,7 +61,7 @@ export function validateEmployeeLastNameField(value: string): string {
 export function validateEmployeeCpfField(value: string): string {
   return rethrowAsValidationException('user_input', () => {
     const cpf = validateRequiredText(value, 'cpf');
-    assertCondition(CPF_FORMAT_PATTERN.test(cpf), 'CPF invalido. Use o formato XXX.XXX.XXX-YY.');
+    assertCondition(CPF_FORMAT_PATTERN.test(cpf), VALIDATION_MESSAGES.invalidCpf);
     return cpf;
   });
 }
@@ -80,7 +81,7 @@ export function validateEmployeePositionField(
     const position = validateRequiredText(value, 'position');
     assertCondition(
       positionOptions.some((option) => option.value === position),
-      'Selecione um cargo valido.'
+      VALIDATION_MESSAGES.invalidPositionSelection
     );
     return position;
   });
